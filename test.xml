@@ -1,0 +1,14 @@
+<calc>
+	(x + abc[1])
+	<where>
+		<all>
+			<def var="abc">
+				<list>
+					<item><text>&lt;div class='bonza-error'&gt;[%state.error%]&lt;/div&gt;</text></item>
+					<item>2222</item>
+				</list>
+			</def>
+			<def var="x">.22</def>
+		</all>
+	</where>
+</calc>
