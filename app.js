@@ -1,1 +1,0 @@
-Bonza.run("test.xml", "", "main");
