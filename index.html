@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="" />
+    <meta name="author" content="Roman Movchan" />
+    <title>Bonza Test#1</title>
+    <script>document.write('<base href="' + document.location + '" />');</script>
+    <link data-require="bootstrap-css" data-semver="3.3.1" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" />
+    <link data-require="bootstrap@*" data-semver="3.2.0" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.css" />
+    <link rel="stylesheet" href="style.css" />
+    <script data-require="jquery" data-semver="2.1.1" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script data-require="bootstrap" data-semver="3.2.0" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.js"></script>
+    <script src="bonza.js"></script>
+</head>
+
+<body onload="bonza = BonzaInit()">
+   <h1>Bonza Test</h1>
+<small>&nbsp;Author: Roman Movchan</small>
+<hr>
+<button class="btn" onclick='bonza.evalXMLFile("test.xml", "main")'>Do it!</button>
+<span id="main">Placeholder</span>
+</body>
+
+</html>
