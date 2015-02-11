@@ -24,4 +24,5 @@ small {
 	border: 1px solid;
 	border-radius: 6px;
 	background-color: LightGreen;
+	border-style: outset;
 }

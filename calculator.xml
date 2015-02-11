@@ -3,7 +3,7 @@
 		<title>Calculator Demo</title>
 		<author>Roman Movchan, Melbourne, Australia</author>
 	</doc>
-	<type name="command">
+	<type name="Command">
 		<any>
 			<prop name="append">
 				<string/>
@@ -16,10 +16,102 @@
 			<prop name="clear"/>
 		</any>
 	</type>
-	<applet class="calculator">
-		<output>
-			<none/>
-		</output>
+	<type name="ButtonState">
+		<any>
+			<prop name="up"/>
+			<prop name="down"/>
+		</any>
+	</type>
+	<type name="ButtonInput">
+		<type name="ButtonState"/>
+	</type>
+	<common>
+		<all>
+			<unwrap>core.format</unwrap>
+			<def var="buttonActions">
+				<func>
+					<arg name="input">
+						<type name="ButtonInput"/>
+					</arg>
+					<arg name="command">
+						<type name="Command"/>
+					</arg>
+					<return>
+						<calc>
+							actions
+							<where>
+								<any>
+									<all>
+										<is>input.down</is>
+										<def var="actions">
+											<list>
+												<item>
+													<send applet="calculator">command</send>
+												</item>
+											</list>
+										</def>
+									</all>
+									<def var="actions">
+										<no>
+											<action/>
+										</no>
+									</def>
+								</any>
+							</where>
+						</calc>
+					</return>
+				</func>
+			</def>
+			<def var="buttonContent">
+				<func>
+					<arg name="text">
+						<string/>
+					</arg>
+					<arg name="state">
+						<type name="ButtonState"/>
+					</arg>
+					<return>
+						<calc>
+							<text>
+								<div class="[%class%]">&nbsp;[%text%]&nbsp;</div>
+							</text>
+							<where>
+								<any>
+									<all>
+										<is>state.down</is>
+										<def var="class">"button-down"</def>
+									</all>
+									<def var="class">"button-up"</def>
+								</any>
+							</where>
+						</calc>
+					</return>
+				</func>
+			</def>
+			<def var="buttonKeyInput">
+				<func>
+					<arg name="code">
+						<integer/>
+					</arg>
+					<arg name="text">
+						<string/>
+					</arg>
+					<arg name="input">
+						<type name="ButtonInput"/>
+					</arg>
+					<return>
+						<calc>
+							input
+							<where>
+								<is>code = core.str.charCodeAt(text, 0)</is>
+							</where>
+						</calc>
+					</return>
+				</func>
+			</def>
+		</all>
+	</common>
+	<applet name="calculator">
 		<state name="state">
 			<all>
 				<prop name="value">
@@ -112,15 +204,10 @@
 		</content>
 		<init id="id">
 			<state>{ value: "0", memory: 0.0, command: {none:} }</state>
-			<actions>
-				<no>
-					<action/>
-				</no>
-			</actions>
 		</init>
 		<respond>
 			<input name="input">
-				<type name="command"/>
+				<type name="Command"/>
 			</input>
 			<state>
 				<calc>
@@ -147,7 +234,7 @@
 														<text>[%state.value%][%input.append%]</text>
 													</def>
 												</any>
-												<is>core.format.strToFloat(value)</is>
+												<is>strToNum(value)</is>
 											</all>
 										</where>
 									</calc>
@@ -160,9 +247,9 @@
 							<all>
 								<is>state.command.plus</is>
 								<calc>
-									<def var="newstate">{ value: core.format.floatToStr(result), memory: result, command: input }</def>
+									<def var="newstate">{ value: numToStr(result), memory: result, command: input }</def>
 									<where>
-										<def var="result">core.format.strToFloat(state.value)+state.memory</def>
+										<def var="result">strToNum(state.value) + state.memory</def>
 									</where>
 								</calc>
 							</all>
@@ -171,92 +258,57 @@
 					</where>
 				</calc>
 			</state>
-			<actions>
-				<no>
-					<action/>
-				</no>
-			</actions>
 		</respond>
-		<events/>
-		<!-- no events -->
-		<links>
-			<!-- capture other applets' output and convert to own input commands -->
-			<in class="digit" data="value">{ append: value }</in>
-			<in class="period" data="value">{ append: "." }</in>
-			<in class="plus" data="value">{ plus: }</in>
-		</links>
 	</applet>
-	<applet class="digit">
-		<output>
-			<!-- output is the digit (1-character string) -->
-			<string/>
-		</output>
+	<applet name="digit">
 		<state name="state">
-			<string/>
+			<all>
+				<prop name="id">
+					<string/>
+				</prop>
+				<prop name="state">
+					<type name="ButtonState"/>
+				</prop>
+			</all>
 		</state>
-		<content>
-			<text>&nbsp;[%state%]&nbsp;</text>
-		</content>
+		<content>buttonContent(state.id, state.state)</content>
 		<init id="id">
-			<state>id</state>
-			<actions>
-				<no>
-					<action/>
-				</no>
-			</actions>
+			<state>{ id: id, state: { up: } }</state>
 		</init>
 		<respond>
-			<input name="press">
-				<prop name="press"/>
+			<input name="input">
+				<type name="ButtonInput"/>
 			</input>
-			<state>state</state>
-			<actions>
-				<list>
-					<item>
-						<output>state.id</output>
-					</item>
-				</list>
-			</actions>
+			<state>{ id: state.id, state: input }</state>
+			<actions>buttonActions(input, { append: state.id })</actions>
 		</respond>
 		<events>
-			<onclick>{ press: }</onclick>
+			<onmousedown>{ down: }</onmousedown>
+			<onmouseup>{ up: }</onmouseup>
+			<onkeydown code="code">buttonKeyInput(code, state.id, { Down: })</onkeydown>
+			<onkeyup code="code">buttonKeyInput(code, state.id, { Up: })</onkeyup>
 		</events>
-		<links/>
 	</applet>
-	<applet class="plus">
-		<output>
-			<prop name="notify"/>
-		</output>
+	<applet name="plus">
 		<state name="state">
-			<all/>
+			<type name="ButtonState"/>
 		</state>
-		<content>
-			<text>&nbsp;+&nbsp;</text>
-		</content>
+		<content>buttonContent("+", state)</content>
 		<init id="id">
-			<state>{}</state>
-			<actions>
-				<no>
-					<action/>
-				</no>
-			</actions>
+			<state>{ up: }</state>
 		</init>
 		<respond>
-			<input name="press">
-				<prop name="press"/>
+			<input name="input">
+				<type name="ButtonInput"/>
 			</input>
-			<state>{}</state>
-			<actions>
-				<list>
-					<item>
-						<output>{ notify: }</output>
-					</item>
-				</list>
-			</actions>
+			<state>input</state>
+			<actions>buttonActions(input, { plus: })</actions>
 		</respond>
 		<events>
-			<onclick>{ press: }</onclick>
+			<onmousedown>{ down: }</onmousedown>
+			<onmouseup>{ up: }</onmouseup>
+			<onkeydown code="code">buttonKeyInput(code, "+", { Down: })</onkeydown>
+			<onkeyup code="code">buttonKeyInput(code, "+", { Up: })</onkeyup>
 		</events>
-		<links/>
 	</applet>
 </library>
