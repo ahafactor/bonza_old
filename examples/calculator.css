@@ -1,0 +1,107 @@
+td {
+	vertical-align: middle;
+}
+.calculator {
+	font-size: 2em;
+	border: 1px solid;
+	border-radius: 2px;
+	background-color: white;
+}
+.bonza-display {
+	margin: 5px;
+	text-align: right;
+	border: 1px solid;
+	border-radius: 2px;
+	border-color:#000000;
+	background-color: MediumSeaGreen;
+}
+.bonza-digit {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: DimGray;
+	color: white;
+	cursor: pointer;
+}
+.bonza-clear {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: red;
+	color: white;
+	cursor: pointer;
+}
+.bonza-plus {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: DimGray;
+	color: white;
+	cursor: pointer;
+	height: 100%;
+}
+.bonza-minus {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: DimGray;
+	color: white;
+	cursor: pointer;
+}
+.bonza-multiply {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: DimGray;
+	color: white;
+	cursor: pointer;
+}
+.bonza-divide {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: DimGray;
+	color: white;
+	cursor: pointer;
+}
+.bonza-equal {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: DimGray;
+	color: white;
+	cursor: pointer;
+	height: 100%;
+}
+.bonza-period {
+	margin: 2px;
+	text-align: center;
+	border: 1px solid;
+	border-radius: 2px;
+	border-style: outset;
+	border-color:#000000;
+	background-color: DimGray;
+	color: white;
+	cursor: pointer;
+}

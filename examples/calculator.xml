@@ -48,13 +48,18 @@
 												<item>
 													<send applet="calculator">command</send>
 												</item>
+												<item>
+													<redraw/>
+												</item>
 											</list>
 										</def>
 									</all>
 									<def var="actions">
-										<no>
-											<action/>
-										</no>
+										<list>
+											<item>
+												<redraw/>
+											</item>
+										</list>
 									</def>
 								</any>
 							</where>
@@ -132,10 +137,10 @@
 		</state>
 		<content>
 			<text>
-				<table class="calculator">
+				<table>
 					<tr>
 						<td colspan="4">
-							<div class="display">[%state.value%]</div>
+							<div class="[%core.classname('display')%]" id="display"/>
 						</td>
 					</tr>
 					<tr>
@@ -258,6 +263,26 @@
 					</where>
 				</calc>
 			</state>
+			<actions>
+				<list>
+					<item>
+						<send applet="display">state.value</send>
+					</item>
+				</list>
+			</actions>
+		</respond>
+	</applet>
+	<applet name="display">
+		<state>
+			<string/>
+		</state>
+		<content>state</content>
+		<init id="id">"0"</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>input</state>
 		</respond>
 	</applet>
 	<applet name="digit">
@@ -283,10 +308,10 @@
 			<actions>buttonActions(input, { append: state.id })</actions>
 		</respond>
 		<events>
-			<onmousedown>{ down: }</onmousedown>
-			<onmouseup>{ up: }</onmouseup>
-			<onkeydown code="code">buttonKeyInput(code, state.id, { Down: })</onkeydown>
-			<onkeyup code="code">buttonKeyInput(code, state.id, { Up: })</onkeyup>
+			<mousedown>{ down: }</onmousedown>
+			<mouseup>{ up: }</onmouseup>
+			<keydown code="code">buttonKeyInput(code, state.id, { Down: })</onkeydown>
+			<keyup code="code">buttonKeyInput(code, state.id, { Up: })</onkeyup>
 		</events>
 	</applet>
 	<applet name="plus">
@@ -305,10 +330,10 @@
 			<actions>buttonActions(input, { plus: })</actions>
 		</respond>
 		<events>
-			<onmousedown>{ down: }</onmousedown>
-			<onmouseup>{ up: }</onmouseup>
-			<onkeydown code="code">buttonKeyInput(code, "+", { Down: })</onkeydown>
-			<onkeyup code="code">buttonKeyInput(code, "+", { Up: })</onkeyup>
+			<mousedown>{ down: }</onmousedown>
+			<mouseup>{ up: }</onmouseup>
+			<keydown code="code">buttonKeyInput(code, "+", { Down: })</onkeydown>
+			<keyup code="code">buttonKeyInput(code, "+", { Up: })</onkeyup>
 		</events>
 	</applet>
 </library>
