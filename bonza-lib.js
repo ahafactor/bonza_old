@@ -209,7 +209,11 @@ function loadBonzaLibrary(url) {
 					prev = result;
 					token = scanner.exec(formula);
 					if (parseProp()) {
-						result = prev[result];
+						if(prev.hasOwnProperty(result)){
+							result = prev[result];
+						} else {
+							throw "Fail";
+						}
 					} else {
 						throw "Fail";
 					}
@@ -416,13 +420,16 @@ function loadBonzaLibrary(url) {
 					}
 					output.result = array;
 					break;
+				case "no":
+					output.result = [];
+					break;
 				case "calc":
 					where = getChildren(expr);
 					//where = expr.getElementsByTagName("where");
 					for (prop in context) {
 						context2[prop] = context[prop];
 					}
-					for ( i = where.length - 2; i >= 0; i--) {
+					for ( i = where.length - 1; i > 0; i--) {
 						stmt = where[i].children[0];
 						if (evalStmt(stmt, context2, result)) {
 							for (prop in result) {
@@ -470,8 +477,7 @@ function loadBonzaLibrary(url) {
 					}
 					break;
 				case "input":
-					if(evalExpr(firstExpr(expr), context, result)){
-						
+					if(evalExpr(firstExpr(expr), context, result)){						
 						output.result = actions.input(result.result);
 					} else {
 						return false;
@@ -512,7 +518,7 @@ function loadBonzaLibrary(url) {
 						}
 					}
 					*/
-					return evalExpr(firstExpr(stmt), context2, result);
+					return evalExpr(firstExpr(stmt), context, result);
 				case "not":
 					return !evalStmt(stmt.children[0], context, result);
 				case "def":
@@ -611,12 +617,12 @@ function loadBonzaLibrary(url) {
 			throw "Error";
 		}
 		var events = {};
-		for ( i = 0; i < events.length; i++) {
-			events[temp[0].children[i].nodeName] = engine.firstExpr(temp[0].children[i]);
+		for ( i = 0; i < temp.children.length; i++) {
+			events[temp.children[i].nodeName] = engine.firstExpr(temp.children[i]);
 		}
 		var instances = [];
 		var input = [];
-		var output = [];
+		var output = {};
 		for (prop in context) {
 			local[prop] = context[prop];
 		}
@@ -625,11 +631,20 @@ function loadBonzaLibrary(url) {
 
 		var handlers = {
 			mousedown : function(event) {
-				var id = event.target.getAttribute("id");
+				var id = event.currentTarget.getAttribute("id");
 				event.stopPropagation();
 				var instance = instances[id];
 				local[statename] = instance;
 				if (engine.evalExpr(events.mousedown, local, output)) {
+					applet.respond(id, output.result);
+				}
+			},
+			mouseup : function(event) {
+				var id = event.currentTarget.getAttribute("id");
+				event.stopPropagation();
+				var instance = instances[id];
+				local[statename] = instance;
+				if (engine.evalExpr(events.mouseup, local, output)) {
 					applet.respond(id, output.result);
 				}
 			}

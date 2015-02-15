@@ -10,19 +10,19 @@ h1 {
 small {
     color: grey;
 }
-.bonza-error {
-    background-color: red;
-    color: white;
-    text-align: center;
-	font-size: 1.2em;
-	border: 1px solid;
-	border-radius: 6px;
-	border-color: black;
-}
-.bonza-result {
+.button-up {
 	font-size: 1.2em;
 	border: 1px solid;
 	border-radius: 6px;
 	background-color: LightGreen;
 	border-style: outset;
+	cursor: pointer;
+}
+.button-down {
+	font-size: 1.2em;
+	border: 1px solid;
+	border-radius: 6px;
+	background-color: LightGreen;
+	border-style: inset;
+	cursor: pointer;
 }

@@ -5,34 +5,62 @@
 		</all>
 	</common>
 	<applet name="test">
-		<state name="state"><integer/></state>
+		<state name="state">
+			<any>
+				<prop name="up"/>
+				<prop name="down"/>
+			</any>
+		</state>
 		<content>
-			<text><strong>test:</strong>[%nbsp%][%state%]</text>
+			<calc>
+				content
+				<where>
+					<any>
+						<all>
+							<is>state.up</is>
+							<def var="content">
+								<text>
+									<span class="button-up">[%nbsp%]Up[%nbsp%]</span>
+								</text>
+							</def>
+						</all>
+						<all>
+							<is>state.down</is>
+							<def var="content">
+								<text>
+									<span class="button-down">[%nbsp%]Down[%nbsp%]</span>
+								</text>
+							</def>
+						</all>
+					</any>
+				</where>
+			</calc>
 		</content>
 		<init id="id">
-			<state>0</state>
+			<state>{up:}</state>
 			<actions>
-				<list>
-					<delay>
-						<input>{inc:}</input>
-						<by>time.sec</by>
-					</delay>
-				</list>
+				<no>
+					<action/>
+				</no>
 			</actions>
 		</init>
 		<respond>
-			<input name="input"><prop name="inc"/></input>
-			<state>state+1</state>
+			<input name="input">
+				<any>
+					<prop name="up"/>
+					<prop name="down"/>
+				</any>
+			</input>
+			<state>input</state>
 			<actions>
 				<list>
 					<redraw/>
-					<delay>
-						<input>{inc:}</input>
-						<by>time.sec</by>
-					</delay>
 				</list>
 			</actions>
 		</respond>
-		<events/>
+		<events>
+			<mousedown>{down:}</mousedown>
+			<mouseup>{up:}</mouseup>
+		</events>
 	</applet>
 </library>
