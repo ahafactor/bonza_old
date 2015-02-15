@@ -1,14 +1,38 @@
-<calc>
-	(x + abc[1]) + 1
-	<where>
+<library>
+	<common>
 		<all>
-			<def var="abc">
-				<list>
-					<item><text>&lt;div class='bonza-error'&gt;[%state.error%]&lt;/div&gt;</text></item>
-					<item>2222</item>
-				</list>
-			</def>
-			<def var="x">.22</def>
+			<unwrap>core</unwrap>
 		</all>
-	</where>
-</calc>
+	</common>
+	<applet name="test">
+		<state name="state"><integer/></state>
+		<content>
+			<text><strong>test:</strong>[%nbsp%][%state%]</text>
+		</content>
+		<init id="id">
+			<state>0</state>
+			<actions>
+				<list>
+					<delay>
+						<input>{inc:}</input>
+						<by>time.sec</by>
+					</delay>
+				</list>
+			</actions>
+		</init>
+		<respond>
+			<input name="input"><prop name="inc"/></input>
+			<state>state+1</state>
+			<actions>
+				<list>
+					<redraw/>
+					<delay>
+						<input>{inc:}</input>
+						<by>time.sec</by>
+					</delay>
+				</list>
+			</actions>
+		</respond>
+		<events/>
+	</applet>
+</library>

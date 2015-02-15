@@ -130,6 +130,8 @@ function Bonza() {
 					result = prev(args[0]);
 				} else if (args.length == 2) {
 					result = prev(args[0], args[1]);
+				} else if (args.length == 3) {
+					result = prev(args[0], args[1], args[2]);
 				} else {
 					throw "Fail";
 				}
@@ -328,15 +330,40 @@ function Bonza() {
 		}
 	};
 
-	function Applet(xml, context) {
+	function Actions(applets) {
+		this.redraw = function() {
+			return function(name, id) {
+				applets[name].redraw(id);
+			};
+		};
+		this.send = function(target, msg) {
+			return function(name, id) {
+				applets[target].broadcast(msg);
+			};
+		};
+		this.get = function(url, success, error) {
+			return function(name, id) {
+				jQuery.get(url, function(data, status) {
+					applets[name].respond(id, success(data));
+				}).fail(function(jqXHR, textStatus, errorThrown) {
+					applets[name].respond(id, error(textStatus));
+				});
+			};
+		};
+	};
+
+	function Applet(xml, context, run) {
 		var temp;
 		var prop;
-		var local = [];
+		var local = {};
+		var i;
+
 		temp = xml.getElementsByTagName("state");
 		if (temp.length != 1) {
 			throw "Fail";
 		}
 		var statename = temp[0].getAttribute("name");
+
 		temp = xml.getElementsByTagName("init");
 		if (temp.length != 1) {
 			throw "Fail";
@@ -344,11 +371,13 @@ function Bonza() {
 		var idname = temp[0].getAttribute("id");
 		var initState = firstExpr(temp[0].getElementsByTagName("state")[0]);
 		var initActions = firstExpr(temp[0].getElementsByTagName("actions")[0]);
+
 		temp = xml.getElementsByTagName("content");
 		if (temp.length != 1) {
 			throw "Fail";
 		}
 		var content = firstExpr(temp[0]);
+
 		temp = xml.getElementsByTagName("respond");
 		if (temp.length != 1) {
 			throw "Fail";
@@ -356,39 +385,82 @@ function Bonza() {
 		var inputname = temp[0].getElementsByTagName("input")[0].getAttribute("name");
 		var respState = firstExpr(temp[0].getElementsByTagName("state")[0]);
 		var respActions = firstExpr(temp[0].getElementsByTagName("actions")[0]);
-		var events = [];
+
+		temp = xml.getElementsByTagName("events");
+		if (temp.length != 1) {
+			throw "Fail";
+		}
+		var events = {};
+		for ( i = 0; i < events.length; i++) {
+			events[temp[0].children[i].nodeName] = firstExpr(temp[0].children[i]);
+		}
+		var handlers = {
+			mousedown : function(event) {
+				var id = event.target.getAttribute("id");
+				event.stopPropagation();
+				var instance = instances[id];
+				local[statename] = instance;
+				if (evalExpr(events.mousedown, local, output)) {
+					local[inputname] = output.result;
+					if (evalExpr(respState, local, output)) {
+						instances[id] = output.result;
+					}
+					run();
+				}
+			}
+		};
+
 		var instances = [];
 		for (prop in context) {
 			local[prop] = context[prop];
 		}
-		var redraw = function(id, instance) {
-			local[statename] = instance;
-			var element = document.getElementById(id);
-			if (evalExpr(content, local, output)) {
-				element.innerHTML = output.result;
-			}
-		};
-		this.create = function(id) {
+		this.create = function(id, element) {
 			local[idname] = id;
 			if (evalExpr(initState, local, output)) {
 				instances[id] = output.result;
-				redraw(id, output.result);
+				if (evalExpr(content, local, output)) {
+					element.innerHTML = output.result;
+				}
+				for (var e in events) {
+					jQuery("#" + id).on(e, handlers[e]);
+				}
+			}
+			delete local[idname];
+		};
+		this.exists = function(id) {
+			return typeof instances[id] != "undefined";
+		};
+		this.redraw = function(id) {
+			//local[idname] = id;
+			local[statename] = instances[id];
+			if (evalExpr(content, local, output)) {
+				var element = document.getElementById(id);
+				element.innerHTML = output.result;
+			}
+		};
+		this.respond = function(id, msg) {
+			var instance = instances[id];
+			//local[idname] = id;
+			local[statename] = instance;
+			local[inputname] = msg;
+			if (evalExpr(respState, local, output)) {
+				instances[id] = output.result;
 			}
 		};
 		this.broadcast = function(msg) {
 			var instance;
+			local[inputname] = msg;
 			for (var id in instances) {
 				instance = instances[id];
+				//local[idname] = id;
 				local[statename] = instance;
-				local[inputname] = msg;
 				if (evalExpr(respState, local, output)) {
 					instances[id] = output.result;
-					redraw(id, output.result);
 				}
 			}
 		};
 		this.destroy = function(id) {
-			instances[id] = undefined;
+			delete instances[id];
 		};
 	}
 
@@ -401,18 +473,6 @@ function Bonza() {
 		};
 		var output = [];
 		var prop;
-		var actions = {
-			redraw : function() {
-				return function(name, id) {
-					applets[name].redraw(id);
-				};
-			},
-			send : function(target, msg) {
-				return function(name, id) {
-					applets[target].broadcast(msg);
-				};
-			}
-		};
 
 		function firstExpr(node) {
 			var first = 0;
@@ -507,6 +567,9 @@ function Bonza() {
 					}
 					output.result = output2;
 					break;
+				case "redraw":
+					output.result = actions.redraw();
+					break;
 				default:
 					return false;
 				}
@@ -593,6 +656,7 @@ function Bonza() {
 				return false;
 			}
 		};
+
 		temp = xml.getElementsByTagName("common");
 		if (temp.length > 0) {
 			if (temp.length > 1 || !evalStmt(temp[0], context, output)) {
@@ -603,64 +667,13 @@ function Bonza() {
 			}
 		}
 
-		temp = xml.getElementsByTagName("applet");
-		applets.length = temp.length;
-		for (var i = 0; i < temp.length; i++) {
-			name = temp[i].getAttribute("name");
-			applets[name] = new Applet(temp[i]);
-		}
-		//this.applets = applets;
-		var perform = function(actions) {
-			var action;
-			for (var i = 0; i < actions.length; i++) {
-				action = action[i];
-				action();
-			}
-		};
-		var process = function(applet, instance) {
-			var input;
-			var response;
-			var needRedraw = false;
-			for (var i = 0; i < instance.input.length; i++) {
-				input = instance.input[i];
-				response = applet.respond(input, context);
-				instance.state = response.state;
-				instance.actions = response.actions;
-				needRedraw = true;
-			}
-			instance.input = [];
-			return needRedraw;
-		};
 		var run = function() {
 			var applet;
 			var elements;
 			var element;
-			var instance;
 			var id;
 			var name;
-			var content;
-			var setEvents = function(applet, instance, id) {
-				var local;
-				var e;
-				var events = {
-					mousedown : function() {
-						for (prop in output) {
-							local[prop] = context[prop];
-						}
-						local[applet.statename] = instance.state;
-						if (evalExpr(applet.events.mousedown, local, output)) {
-							instance.input.unshift(output.result);
-						}
-						run();
-					}
-				};
-				for (e in applet.events) {
-					jQuery("#" + id).on(e, events[e]);
-				}
-			};
-			var count;
 			do {
-				count = 0;
 				for (name in applets) {
 					applet = applets[name];
 					elements = document.getElementsByClassName("bonza-" + name);
@@ -668,17 +681,13 @@ function Bonza() {
 						id = element.getAttribute("id");
 						if (id !== null && id !== "") {
 							instance = applet.instances[id];
-							if ( typeof instance == "undefined") {
-								count++;
-								instance = applet.init(id, context);
-								applet.instances[id] = instance;
-								content = applet.content(instance.state, context);
-								element.innerHTML = content;
+							if (!applet.exists(id)) {
+								applet.create(id, element);
 							}
 						}
 					}
 				}
-			} while(count > 0);
+			} while(queue.length > 0);
 			for (name in applets) {
 				applet = applets[name];
 				for (id in applet.instances) {
@@ -698,6 +707,14 @@ function Bonza() {
 				}
 			}
 		};
+		temp = xml.getElementsByTagName("applet");
+		applets.length = temp.length;
+		for (var i = 0; i < temp.length; i++) {
+			name = temp[i].getAttribute("name");
+			applets[name] = new Applet(temp[i], context, run);
+		}
+		//this.applets = applets;
+
 		this.run = run;
 	};
 
