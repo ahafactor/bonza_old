@@ -2,42 +2,42 @@
 	<common>
 		<all>
 			<unwrap>core</unwrap>
+			<unwrap>string</unwrap>
 		</all>
 	</common>
-	<applet name="test">
+	<applet name="button">
+		<output>
+			<string/>
+		</output>
 		<state name="state">
-			<any>
-				<prop name="up"/>
-				<prop name="down"/>
-			</any>
+			<all>
+				<prop name="text">
+					<string/>
+				</prop>
+				<any>
+					<prop name="up"/>
+					<prop name="down"/>
+				</any>
+			</all>
 		</state>
 		<content>
 			<calc>
-				content
+				<text>
+					<span class="[%updown%]">[%state.text%]</span>
+				</text>
 				<where>
 					<any>
 						<all>
-							<is>state.up</is>
-							<def var="content">
-								<text>
-									<span class="button-up">[%nbsp%]Up[%nbsp%]</span>
-								</text>
-							</def>
-						</all>
-						<all>
 							<is>state.down</is>
-							<def var="content">
-								<text>
-									<span class="button-down">[%nbsp%]Down[%nbsp%]</span>
-								</text>
-							</def>
+							<def var="updown">"button-down"</def>
 						</all>
+						<def var="updown">"button-up"</def>
 					</any>
 				</where>
 			</calc>
 		</content>
-		<init id="id">
-			<state>{up:}</state>
+		<init id="id" content="text">
+			<state>{id: id, text: text, up:}</state>
 			<actions>
 				<no>
 					<action/>
@@ -51,16 +51,139 @@
 					<prop name="down"/>
 				</any>
 			</input>
-			<state>input</state>
+			<state>
+				<calc>
+					newstate
+					<where>
+						<any>
+							<all>
+								<is>input.up</is>
+								<def var="newstate">{id: state.id, text: state.text, up:}</def>
+							</all>
+							<all>
+								<is>input.down</is>
+								<def var="newstate">{id: state.id, text: state.text, down:}</def>
+							</all>
+						</any>
+					</where>
+				</calc>
+			</state>
 			<actions>
+				<calc>
+					actions
+					<where>
+						<any>
+							<all>
+								<is>state.down</is>
+								<def var="actions">
+									<list>
+										<redraw/>
+										<output>state.id</output>
+										<delay>
+											<input>{up:}</input>
+											<by>200*time.msec</by>
+										</delay>
+									</list>
+								</def>
+							</all>
+							<def var="actions">
+								<list>
+									<redraw/>
+								</list>
+							</def>
+						</any>
+					</where>
+				</calc>
 				<list>
 					<redraw/>
 				</list>
 			</actions>
 		</respond>
 		<events>
-			<mousedown>{down:}</mousedown>
-			<mouseup>{up:}</mouseup>
+			<click>{down:}</click>
 		</events>
+		<listen/>
+	</applet>
+	<applet name="display">
+		<output>
+			<none/>
+		</output>
+		<state name="state">
+			<string/>
+		</state>
+		<content>state</content>
+		<init id="id" content="content">
+			<state>""</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>
+				<text>[%state%][%substr({ str: input, start: (length(input) - 1), length: 1 })%]</text>
+			</state>
+			<actions>
+				<list>
+					<redraw/>
+				</list>
+			</actions>
+		</respond>
+		<events/>
+		<listen>
+			<from applet="button" data="text">text</from>
+		</listen>
+	</applet>
+	<applet name="test">
+		<output>
+			<none/>
+		</output>
+		<state name="state">
+			<prop name="none"/>
+		</state>
+		<content>
+			<text>
+				<table>
+					<tr>
+						<td colspan="2">
+							<div class="bonza-display" id="display"></div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="bonza-button" id="btn1">[%nbsp%]1[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="bonza-button" id="btn2">[%nbsp%]2[%nbsp%]</div>
+						</td>
+					</tr>
+				</table>
+			</text>
+		</content>
+		<init id="id" content="content">
+			<state>{none:}</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>state</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</respond>
+		<events/>
+		<listen/>
 	</applet>
 </library>

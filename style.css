@@ -14,15 +14,17 @@ small {
 	font-size: 1.2em;
 	border: 1px solid;
 	border-radius: 6px;
-	background-color: LightGreen;
 	border-style: outset;
 	cursor: pointer;
+	background-color: LightGreen;
+	color: black;
 }
 .button-down {
 	font-size: 1.2em;
 	border: 1px solid;
 	border-radius: 6px;
-	background-color: LightGreen;
 	border-style: inset;
 	cursor: pointer;
+	background-color: LightGreen;
+	color: white;
 }

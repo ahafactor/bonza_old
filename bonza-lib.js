@@ -24,8 +24,43 @@ function loadBonzaLibrary(url) {
 			numToStr : function(x) {
 				return x.toString();
 			},
+		},
+		string : {
+			substr : function(args){
+				if(args.hasOwnProperty("length")){
+					return args.str.substr(args.start, args.length);
+				} else {
+					return args.str.slice(args.start, args.end);
+				}
+			},
+			length : function(str){
+				return str.length;
+			},
+			concat: function(s1, s2){
+				return s1.concat(s2);
+			},
+			join: function(arg){
+				var result = "";
+				for(var i = 0; i < arg.length; i++) {
+					result.concat(arg[i]);
+				}
+				return result;
+			}
 		}
 	};
+	
+	var resume;
+
+	function getChildren(node) {
+		var i = 0;
+		var result = [];
+		for(i = 0; i < node.childNodes.length; i++){
+			if (node.childNodes[i].nodeType != 3 || node.childNodes[i].nodeValue.trim() != "") {
+				result.push(node.childNodes[i]);
+			}				
+		}
+		return result;
+	}
 
 	function ExprEngine(actions) {
 
@@ -54,7 +89,7 @@ function loadBonzaLibrary(url) {
 				} else if (parseVar()) {
 					while (parseApply() || parseIndex() || parseDot()) {
 					}
-					if (parsePlus()) {
+					if (parsePlus() || parseMinus()) {
 					}
 					return true;
 				} else {
@@ -144,12 +179,12 @@ function loadBonzaLibrary(url) {
 					if (token !== null && token[0] !== ")") {
 						if (parseFormula()) {
 							args[args.length] = result;
-							token = scanner.exec(formula);
+							//token = scanner.exec(formula);
 							while (token !== null && token[0] === ",") {
 								token = scanner.exec(formula);
 								if (parseFormula()) {
 									args[args.length] = result;
-									token = scanner.exec(formula);
+									//token = scanner.exec(formula);
 								} else {
 									throw "Fail";
 								}
@@ -350,17 +385,6 @@ function loadBonzaLibrary(url) {
 			return node.childNodes[first];
 		}
 
-		function getChildren(node) {
-			var i = 0;
-			var result = [];
-			for(i = 0; i < node.childNodes.length; i++){
-				if (node.childNodes[i].nodeType != 3 || node.childNodes[i].nodeValue.trim() != "") {
-					result.push(node.childNodes[i]);
-				}				
-			}
-			return result;
-		}
-
 		function evalExpr(expr, context, output) {
 			var stmt;
 			var where;
@@ -425,7 +449,6 @@ function loadBonzaLibrary(url) {
 					break;
 				case "calc":
 					where = getChildren(expr);
-					//where = expr.getElementsByTagName("where");
 					for (prop in context) {
 						context2[prop] = context[prop];
 					}
@@ -483,6 +506,13 @@ function loadBonzaLibrary(url) {
 						return false;
 					}
 					break;
+				case "output":
+					if(evalExpr(firstExpr(expr), context, result)){						
+						output.result = actions.output(result.result);
+					} else {
+						return false;
+					}
+					break;
 				default:
 					return false;
 				}
@@ -502,22 +532,6 @@ function loadBonzaLibrary(url) {
 			try {
 				switch(stmt.nodeName) {
 				case "is":
-					/*
-					where = stmt.getElementsByTagName("where");
-					for (prop in context) {
-						context2[prop] = context[prop];
-					}
-					for ( i = where.length - 1; i >= 0; i--) {
-						stmt2 = where[i].children[0];
-						if (evalStmt(stmt2, context2, result)) {
-							for (prop in result) {
-								context2[prop] = result[prop];
-							}
-						} else {
-							return false;
-						}
-					}
-					*/
 					return evalExpr(firstExpr(stmt), context, result);
 				case "not":
 					return !evalStmt(stmt.children[0], context, result);
@@ -580,174 +594,220 @@ function loadBonzaLibrary(url) {
 	function Applet(xml, context, engine) {
 		var temp;
 		var prop;
-		var local = {};
+		this.local = {};
 		var i;
 		var j;
+		
+		this.name = xml.getAttribute("name");
+		
+		for(i = 0; i < xml.children.length; i++){
+			temp = xml.children[i];
+			switch(temp.nodeName) {
+			case "state":
+				this.statename = temp.getAttribute("name");
+				break;
+			case "content":
+				this.content = engine.firstExpr(temp);
+				break;
+			case "init":
+				this.idname = temp.getAttribute("id");
+				this.contentname = temp.getAttribute("content");
+				this.initState = engine.firstExpr(temp.getElementsByTagName("state")[0]);
+				this.initActions = engine.firstExpr(temp.getElementsByTagName("actions")[0]);
+				break;
+			case "respond":
+				this.inputname = temp.getElementsByTagName("input")[0].getAttribute("name");
+				this.respState = engine.firstExpr(temp.getElementsByTagName("state")[0]);
+				this.respActions = engine.firstExpr(temp.getElementsByTagName("actions")[0]);
+				break;
+			case "events":
+				this.events = {};
+				for ( j = 0; j < temp.children.length; j++) {
+					this.events[temp.children[j].nodeName] = engine.firstExpr(temp.children[j]);
+				}
+				break;
+			case "listen":
+				this.listeners = {};
+				for ( j = 0; j < temp.children.length; j++) {
+					this.listeners[temp.children[j].getAttribute("applet")] = { data: temp.children[j].getAttribute("data"), expr: engine.firstExpr(temp.children[j]) };
+				}
+				break;
+			case "output":
+				break;
+			default:
+				throw "Error";	
+			}
+		}
 
-		temp = xml.children[0];
-		if(temp.nodeName !== "state") {
-			throw "Error";
-		}
-		var statename = temp.getAttribute("name");
-
-		temp = xml.children[1];
-		if(temp.nodeName !== "content") {
-			throw "Error";
-		}
-		var content = engine.firstExpr(temp);
-
-		temp = xml.children[2];
-		if(temp.nodeName !== "init") {
-			throw "Error";
-		}
-		var idname = temp.getAttribute("id");
-		var initState = engine.firstExpr(temp.getElementsByTagName("state")[0]);
-		var initActions = engine.firstExpr(temp.getElementsByTagName("actions")[0]);
-
-		temp = xml.children[3];
-		if(temp.nodeName !== "respond") {
-			throw "Error";
-		}
-		var inputname = temp.getElementsByTagName("input")[0].getAttribute("name");
-		var respState = engine.firstExpr(temp.getElementsByTagName("state")[0]);
-		var respActions = engine.firstExpr(temp.getElementsByTagName("actions")[0]);
-
-		temp = xml.children[4];
-		if(temp.nodeName !== "events") {
-			throw "Error";
-		}
-		var events = {};
-		for ( i = 0; i < temp.children.length; i++) {
-			events[temp.children[i].nodeName] = engine.firstExpr(temp.children[i]);
-		}
-		var instances = [];
-		var input = [];
+		this.instances = {};
+		this.input = [];
 		var output = {};
 		for (prop in context) {
-			local[prop] = context[prop];
+			this.local[prop] = context[prop];
 		}
 		
 		var applet = this;
 
-		var handlers = {
-			mousedown : function(event) {
-				var id = event.currentTarget.getAttribute("id");
-				event.stopPropagation();
-				var instance = instances[id];
-				local[statename] = instance;
-				if (engine.evalExpr(events.mousedown, local, output)) {
+		this.handlers = {
+			click : function(e) {
+				var id = e.currentTarget.getAttribute("id");
+				var instance = applet.instances[id];
+				applet.local[applet.statename] = instance;
+				if (engine.evalExpr(applet.events.click, applet.local, output)) {
+					//e.stopPropagation();
 					applet.respond(id, output.result);
 				}
 			},
-			mouseup : function(event) {
-				var id = event.currentTarget.getAttribute("id");
-				event.stopPropagation();
+			mouseover : function(e) {
+				var id = e.currentTarget.getAttribute("id");
+				var instance = this.instances[id];
+				this.local[this.statename] = instance;
+				if (engine.evalExpr(events.mouseover, local, output)) {
+					//e.stopPropagation();
+					this.respond(id, output.result);
+				}
+			},
+			mouseout : function(e) {
+				var id = e.currentTarget.getAttribute("id");
+				var instance = instances[id];
+				local[statename] = instance;
+				if (engine.evalExpr(events.mouseout, local, output)) {
+					e.stopPropagation();
+					applet.respond(id, output.result);
+				}
+			},
+			mousedown : function(e) {
+				var id = e.currentTarget.getAttribute("id");
+				var instance = instances[id];
+				local[statename] = instance;
+				if (engine.evalExpr(events.mousedown, local, output)) {
+					e.stopPropagation();
+					applet.respond(id, output.result);
+				}
+			},
+			mouseup : function(e) {
+				var id = e.currentTarget.getAttribute("id");
 				var instance = instances[id];
 				local[statename] = instance;
 				if (engine.evalExpr(events.mouseup, local, output)) {
+					e.stopPropagation();
 					applet.respond(id, output.result);
 				}
 			}
 		};
 
-		this.instances = instances;
+		//this.instances = instances;
+		//this.input = input;
 		this.create = function(id) {
-			local[idname] = id;
-			if (engine.evalExpr(initState, local, output)) {
-				instances[id] = output.result;
-				local[statename] = output.result;
-				if (engine.evalExpr(content, local, output)) {
-					var element = document.getElementById(id);
+			this.local[this.idname] = id;
+			var element = document.getElementById(id);
+			this.local[this.contentname] = element.innerHTML;
+			if (engine.evalExpr(this.initState, this.local, output)) {
+				this.instances[id] = output.result;
+				this.local[this.statename] = output.result;
+				if (engine.evalExpr(this.content, this.local, output)) {
 					element.innerHTML = output.result;
 				}
-				input[id] = [];
-				for (var e in events) {
-					jQuery("#" + id).on(e, handlers[e]);
+				resume();
+				this.input[id] = [];
+				for (var e in this.events) {
+					//jQuery("#" + id).on(e, handlers[e]);
+					element.addEventListener(e, this.handlers[e]);
 				}
-				if (engine.evalExpr(initActions, local, output)) {
+				if (engine.evalExpr(this.initActions, this.local, output)) {
 					var actions = output.result;
 					for(i = 0; i < actions.length; i++){
 						var action = actions[i];
-						action(applet, id);
+						action(this, id);
 					}
 				}
 			}
-			delete local[idname];
+			delete this.local[this.idname];
+			delete this.local[this.contentname];
 		};
 		this.exists = function(id) {
-			return instances.hasOwnProperty(id);
+			return this.instances.hasOwnProperty(id);
 		};
 		this.redraw = function(id) {
-			//local[idname] = id;
-			local[statename] = instances[id];
-			if (engine.evalExpr(content, local, output)) {
+			this.local[this.statename] = this.instances[id];
+			if (engine.evalExpr(this.content, this.local, output)) {
 				var element = document.getElementById(id);
 				element.innerHTML = output.result;
+				resume();
 			}
 		};
 		this.respond = function(id, msg) {
-			var instance = instances[id];
-			//local[idname] = id;
-			local[statename] = instance;
-			local[inputname] = msg;
-			input[id].push(msg);
+			this.input[id].push(msg);
+			resume();
 		};
 		this.run = function(id) {
-			var instance = instances[id];
-			var queue = input[id];
-			//local[idname] = id;
-			local[statename] = instance;
+			var instance = this.instances[id];
+			var queue = this.input[id];
+			this.local[this.statename] = instance;
 			i = 0;
 			while (i < queue.length) {
-				local[inputname] = queue[i];
-				if (engine.evalExpr(respState, local, output)) {
-					instances[id] = output.result;
-					local[statename] = output.result;
-					if (engine.evalExpr(respActions, local, output)) {
+				this.local[this.inputname] = queue[i];
+				if (engine.evalExpr(this.respState, this.local, output)) {
+					this.instances[id] = output.result;
+					this.local[this.statename] = output.result;
+					if (engine.evalExpr(this.respActions, this.local, output)) {
 						var actions = output.result;
 						for(j = 0; j < actions.length; j++){
 							var action = actions[j];
-							action(applet, id);
+							action(this, id);
 						}
 					}
 				}
 				i++;
 			}
-			input[id] = [];
+			this.input[id] = [];
 		};
 		this.broadcast = function(msg) {
 			var instance;
-			local[inputname] = msg;
-			for (var id in instances) {
-				instance = instances[id];
-				//local[idname] = id;
-				local[statename] = instance;
-				input[id].push(msg);
+			this.local[this.inputname] = msg;
+			for (var id in this.instances) {
+				instance = this.instances[id];
+				this.local[this.statename] = instance;
+				this.input[id].push(msg);
+				resume();
 			}
 		};
 		this.destroy = function(id) {
-			delete instances[id];
-			delete input[id];
+			delete this.instances[id];
+			delete this.input[id];
 		};
 	}
 
 	function Library(xml) {
-		var applets = {};
+		this.applets = {};
 		var temp;
 		var name;
 		var output = {};
 		var prop;
 		var common;
-		var context = { core: core };
+		this.context = { core: core };
+		var lib = this;
 		var actions = {
 			redraw : function() {
 				return function(applet, id) {
 					applet.redraw(id);
 				};
 			},
-			send : function(target, msg) {
+			output : function(msg) {
 				return function(applet, id) {
-					applets[target].broadcast(msg);
+					for(var name in lib.applets){
+						var target = lib.applets[name];
+						if(target.listeners.hasOwnProperty(applet.name)){//target applet has a listener for current applet?
+							var local = {};
+							for (prop in target.local) {
+								local[prop] = target.local[prop];
+							}
+							local[target.listeners[applet.name].data] = msg;
+							if(engine.evalExpr(target.listeners[applet.name].expr, local, output)){
+								target.broadcast(output.result);
+							}
+						}
+					}
 				};
 			},
 			input : function(msg) {
@@ -780,10 +840,10 @@ function loadBonzaLibrary(url) {
 			var elements;
 			var element;
 			var id;
-			var ids = [];
 
-			for (name in applets) {
-				applet = applets[name];
+			for (name in lib.applets) {
+				applet = lib.applets[name];
+				var ids = [];
 				elements = document.getElementsByClassName("bonza-" + name);
 				for (i = 0; i < elements.length; i++) {
 					element = elements[i];
@@ -794,9 +854,6 @@ function loadBonzaLibrary(url) {
 						}
 					}
 				}
-			}
-			for (name in applets) {
-				applet = applets[name];
 				for (id in applet.instances) {
 					element = document.getElementById(id);
 					if (element === null) {
@@ -805,20 +862,21 @@ function loadBonzaLibrary(url) {
 						applet.run(id);
 					}
 				}
+				for(i in ids){
+					id = ids[i];
+					applet.create(id);
+				}
 			}
-			for(i in ids){
-				id = ids[i];
-				applet.create(id);
-			}
+			active = false;
 		};
 
 		temp = xml.getElementsByTagName("common");
 		if (temp.length > 0) {
-			if (temp.length > 1 || !engine.evalStmt(temp[0].children[0], context, output)) {
+			if (temp.length > 1 || !engine.evalStmt(temp[0].children[0], lib.context, output)) {
 				throw "Fail";
 			}
 			for (prop in output) {
-				context[prop] = output[prop];
+				this.context[prop] = output[prop];
 			}
 		}
 
@@ -826,10 +884,17 @@ function loadBonzaLibrary(url) {
 		//applets.length = temp.length;
 		for (var i = 0; i < temp.length; i++) {
 			name = temp[i].getAttribute("name");
-			applet = new Applet(temp[i], context, engine);
-			applets[name] = applet;
+			applet = new Applet(temp[i], lib.context, engine);
+			this.applets[name] = applet;
 		}
 
+		var active = false;
+		resume = function(){
+			if(!active){
+				setTimeout(run, 10);
+				active = true;
+			}
+		};
 		this.run = run;
 	}
 
@@ -838,7 +903,7 @@ function loadBonzaLibrary(url) {
 		if (status === "success") {
 			var lib = new Library(xml.children[0]);
 			lib.run();
-			setInterval(lib.run, 100);
+			//setInterval(lib.run, 100);
 		}
 	}).fail(function(jqXHR, textStatus, errorThrown) {
 		alert(textStatus);
