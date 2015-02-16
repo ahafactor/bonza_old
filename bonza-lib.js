@@ -24,6 +24,18 @@ function loadBonzaLibrary(url) {
 			numToStr : function(x) {
 				return x.toString();
 			},
+			strToNum : function(x) {
+				var result = Number(x);
+				if(isNaN(result)){
+					throw "Error";
+				}
+			},
+			strToInt : function(x) {
+				var result = Math.trunc(Number(x));
+				if(isNaN(result)){
+					throw "Error";
+				}
+			},
 		},
 		string : {
 			substr : function(args){
@@ -81,7 +93,7 @@ function loadBonzaLibrary(url) {
 				} else if (parseString()) {
 					return true;
 				} else if (parseNumber()) {
-					if (parsePlus()) {
+					if (parsePlus() || parseMinus() || parseEqual()) {
 					}
 					return true;
 				} else if (parseObject()) {
@@ -89,7 +101,7 @@ function loadBonzaLibrary(url) {
 				} else if (parseVar()) {
 					while (parseApply() || parseIndex() || parseDot()) {
 					}
-					if (parsePlus() || parseMinus()) {
+					if (parsePlus() || parseMinus()|| parseEqual()) {
 					}
 					return true;
 				} else {
@@ -655,6 +667,7 @@ function loadBonzaLibrary(url) {
 				applet.local[applet.statename] = instance;
 				if (engine.evalExpr(applet.events.click, applet.local, output)) {
 					//e.stopPropagation();
+					e.preventDefault();
 					applet.respond(id, output.result);
 				}
 			},
@@ -678,19 +691,21 @@ function loadBonzaLibrary(url) {
 			},
 			mousedown : function(e) {
 				var id = e.currentTarget.getAttribute("id");
-				var instance = instances[id];
-				local[statename] = instance;
-				if (engine.evalExpr(events.mousedown, local, output)) {
-					e.stopPropagation();
+				var instance = applet.instances[id];
+				applet.local[applet.statename] = instance;
+				if (engine.evalExpr(applet.events.mousedown, applet.local, output)) {
+					//e.stopPropagation();
+					e.preventDefault();
 					applet.respond(id, output.result);
 				}
 			},
 			mouseup : function(e) {
 				var id = e.currentTarget.getAttribute("id");
-				var instance = instances[id];
-				local[statename] = instance;
-				if (engine.evalExpr(events.mouseup, local, output)) {
-					e.stopPropagation();
+				var instance = applet.instances[id];
+				applet.local[applet.statename] = instance;
+				if (engine.evalExpr(applet.events.mouseup, applet.local, output)) {
+					//e.stopPropagation();
+					e.preventDefault();
 					applet.respond(id, output.result);
 				}
 			}

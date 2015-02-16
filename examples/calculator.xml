@@ -3,120 +3,17 @@
 		<title>Calculator Demo</title>
 		<author>Roman Movchan, Melbourne, Australia</author>
 	</doc>
-	<type name="Command">
-		<any>
-			<prop name="append">
-				<string/>
-			</prop>
-			<prop name="plus"/>
-			<prop name="minus"/>
-			<prop name="multiply"/>
-			<prop name="divide"/>
-			<prop name="equal"/>
-			<prop name="clear"/>
-		</any>
-	</type>
-	<type name="ButtonState">
-		<any>
-			<prop name="up"/>
-			<prop name="down"/>
-		</any>
-	</type>
-	<type name="ButtonInput">
-		<type name="ButtonState"/>
-	</type>
 	<common>
 		<all>
-			<unwrap>core.format</unwrap>
-			<def var="buttonActions">
-				<func>
-					<arg name="input">
-						<type name="ButtonInput"/>
-					</arg>
-					<arg name="command">
-						<type name="Command"/>
-					</arg>
-					<return>
-						<calc>
-							actions
-							<where>
-								<any>
-									<all>
-										<is>input.down</is>
-										<def var="actions">
-											<list>
-												<item>
-													<send applet="calculator">command</send>
-												</item>
-												<item>
-													<redraw/>
-												</item>
-											</list>
-										</def>
-									</all>
-									<def var="actions">
-										<list>
-											<item>
-												<redraw/>
-											</item>
-										</list>
-									</def>
-								</any>
-							</where>
-						</calc>
-					</return>
-				</func>
-			</def>
-			<def var="buttonContent">
-				<func>
-					<arg name="text">
-						<string/>
-					</arg>
-					<arg name="state">
-						<type name="ButtonState"/>
-					</arg>
-					<return>
-						<calc>
-							<text>
-								<div class="[%class%]">&nbsp;[%text%]&nbsp;</div>
-							</text>
-							<where>
-								<any>
-									<all>
-										<is>state.down</is>
-										<def var="class">"button-down"</def>
-									</all>
-									<def var="class">"button-up"</def>
-								</any>
-							</where>
-						</calc>
-					</return>
-				</func>
-			</def>
-			<def var="buttonKeyInput">
-				<func>
-					<arg name="code">
-						<integer/>
-					</arg>
-					<arg name="text">
-						<string/>
-					</arg>
-					<arg name="input">
-						<type name="ButtonInput"/>
-					</arg>
-					<return>
-						<calc>
-							input
-							<where>
-								<is>code = core.str.charCodeAt(text, 0)</is>
-							</where>
-						</calc>
-					</return>
-				</func>
-			</def>
+			<unwrap>core</unwrap>
+			<unwrap>string</unwrap>
+			<unwrap>format</unwrap>
 		</all>
 	</common>
 	<applet name="calculator">
+		<output>
+			<string/>
+		</output>
 		<state name="state">
 			<all>
 				<prop name="value">
@@ -128,8 +25,8 @@
 				<prop name="command">
 					<any>
 						<prop name="none"/>
-						<prop name="command">
-							<type name="command"/>
+						<prop name="char">
+							<string/>
 						</prop>
 					</any>
 				</prop>
@@ -137,82 +34,89 @@
 		</state>
 		<content>
 			<text>
-				<table>
-					<tr>
-						<td colspan="4">
-							<div class="[%core.classname('display')%]" id="display"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<div class="[%core.classname('clear')%]" id="clear"/>
-						</td>
-						<td>
-							<div class="[%core.classname('divide')%]" id="divide"/>
-						</td>
-						<td>
-							<div class="[%core.classname('multiply')%]" id="multiply"/>
-						</td>
-						<td>
-							<div class="[%core.classname('minus')%]" id="minus"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<div class="[%core.classname('digit')%]" id="7"/>
-						</td>
-						<td>
-							<div class="[%core.classname('digit')%]" id="8"/>
-						</td>
-						<td>
-							<div class="[%core.classname('digit')%]" id="9"/>
-						</td>
-						<td rowspan="2">
-							<div class="[%core.classname('plus')%]" id="plus"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<div class="[%core.classname('digit')%]" id="4"/>
-						</td>
-						<td>
-							<div class="[%core.classname('digit')%]" id="5"/>
-						</td>
-						<td>
-							<div class="[%core.classname('digit')%]" id="6"/>
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<div class="[%core.classname('digit')%]" id="1"/>
-						</td>
-						<td>
-							<div class="[%core.classname('digit')%]" id="2"/>
-						</td>
-						<td>
-							<div class="[%core.classname('digit')%]" id="3"/>
-						</td>
-						<td rowspan="2">
-							<div class="[%core.classname('equal')%]" id="equal"/>
-						</td>
-					</tr>
-					<tr>
-						<td colspan="2">
-							<div class="[%core.classname('digit')%]" id="0"/>
-						</td>
-						<td>
-							<div class="[%core.classname('period')%]" id="period"/>
-						</td>
-					</tr>
-				</table>
+				<span>
+					<table class="calculator">
+						<tr>
+							<td colspan="4">
+								<div class="[%classname('display')%]" id="display"/>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<div class="[%classname('button')%]" id="clear">C</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="divide">[%nbsp%]/[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="multiply">[%nbsp%]x[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="minus">[%nbsp%]-[%nbsp%]</div>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<div class="[%classname('button')%]" id="7">[%nbsp%]7[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="8">[%nbsp%]8[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="9">[%nbsp%]9[%nbsp%]</div>
+							</td>
+							<td rowspan="2">
+								<div class="[%classname('button')%]" id="plus">[%nbsp%]+[%nbsp%]</div>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<div class="[%classname('button')%]" id="4">[%nbsp%]4[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="5">[%nbsp%]5[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="6">[%nbsp%]6[%nbsp%]</div>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<div class="[%classname('button')%]" id="1">[%nbsp%]1[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="2">[%nbsp%]2[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="3">[%nbsp%]3[%nbsp%]</div>
+							</td>
+							<td rowspan="2">
+								<div class="[%classname('button')%]" id="equal">[%nbsp%]=[%nbsp%]</div>
+							</td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<div class="[%classname('button')%]" id="0">[%nbsp%]0[%nbsp%]</div>
+							</td>
+							<td>
+								<div class="[%classname('button')%]" id="period">[%nbsp%].[%nbsp%]</div>
+							</td>
+						</tr>
+					</table>
+				</span>
 			</text>
 		</content>
 		<init id="id">
-			<state>{ value: "0", memory: 0.0, command: {none:} }</state>
+			<state>{ value: "0", memory: 0, command: {none:} }</state>
+			<actions>
+				<list>
+					<output>state.value</output>
+				</list>
+			</actions>
 		</init>
 		<respond>
 			<input name="input">
-				<type name="Command"/>
+				<string/>
 			</input>
 			<state>
 				<calc>
@@ -220,120 +124,166 @@
 					<where>
 						<any>
 							<all>
-								<is>input.clear</is>
-								<def var="newstate">{ value: "0", memory: 0.0, command: {none:} }</def>
+								<is>input = "equal"</is>
 							</all>
-							<all>
-								<is>input.append</is>
-								<def var="newstate">
-									<calc>
-										{ value: value, memory: state.memory, command: state.command }
-										<where>
-											<all>
-												<any>
-													<all>
-														<is>state.value="0"</is>
-														<def var="value">input.append</def>
-													</all>
-													<def var="value">
-														<text>[%state.value%][%input.append%]</text>
-													</def>
-												</any>
-												<is>strToNum(value)</is>
-											</all>
-										</where>
-									</calc>
-								</def>
-							</all>
-							<all>
-								<is>state.command.none</is>
-								<def var="newstate">{ value: state.value, memory: state.memory, command: input }</def>
-							</all>
-							<all>
-								<is>state.command.plus</is>
+							<def var="newstate">
 								<calc>
-									<def var="newstate">{ value: numToStr(result), memory: result, command: input }</def>
+									{ value: value, memory: strToNum(value), command: {none:} }
 									<where>
-										<def var="result">strToNum(state.value) + state.memory</def>
+										<def var="value">
+											<text>[%state.value%][%input%]</text>
+										</def>
 									</where>
 								</calc>
-							</all>
-							<def var="newstate">{ value: "ERROR", memory: state.memory, command: state.command }</def>
+							</def>
+							<def var="newstate">
+								{ value: "ERROR", memory: state.memory, command: state.command }
+							</def>
 						</any>
 					</where>
 				</calc>
 			</state>
 			<actions>
 				<list>
-					<item>
-						<send applet="display">state.value</send>
-					</item>
+					<output>state.value</output>
 				</list>
 			</actions>
 		</respond>
+		<events/>
+		<listen>
+			<from applet="button" data="button">button</from>
+		</listen>
 	</applet>
 	<applet name="display">
-		<state>
+		<state name="state">
 			<string/>
 		</state>
-		<content>state</content>
-		<init id="id">"0"</init>
+		<content>
+			<text>
+				<div class="display">[%state%]</div>
+			</text>
+		</content>
+		<init id="id">
+			<state>"0"</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
 		<respond>
 			<input name="input">
 				<string/>
 			</input>
 			<state>input</state>
+			<actions>
+				<list>
+					<redraw/>
+				</list>
+			</actions>
 		</respond>
+		<events/>
+		<listen>
+			<from applet="calculator" data="result">result</from>
+		</listen>
 	</applet>
-	<applet name="digit">
+	<applet name="button">
+		<output>
+			<string/>
+		</output>
 		<state name="state">
 			<all>
-				<prop name="id">
+				<prop name="text">
 					<string/>
 				</prop>
-				<prop name="state">
-					<type name="ButtonState"/>
-				</prop>
+				<any>
+					<prop name="up"/>
+					<prop name="down"/>
+				</any>
 			</all>
 		</state>
-		<content>buttonContent(state.id, state.state)</content>
-		<init id="id">
-			<state>{ id: id, state: { up: } }</state>
+		<content>
+			<calc>
+				<text>
+					<div class="[%updown%]">[%state.text%]</div>
+				</text>
+				<where>
+					<any>
+						<all>
+							<is>state.down</is>
+							<def var="updown">"button-down"</def>
+						</all>
+						<def var="updown">"button-up"</def>
+					</any>
+				</where>
+			</calc>
+		</content>
+		<init id="id" content="text">
+			<state>{id: id, text: text, up:}</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
 		</init>
 		<respond>
 			<input name="input">
-				<type name="ButtonInput"/>
+				<any>
+					<prop name="up"/>
+					<prop name="down"/>
+				</any>
 			</input>
-			<state>{ id: state.id, state: input }</state>
-			<actions>buttonActions(input, { append: state.id })</actions>
+			<state>
+				<calc>
+					newstate
+					<where>
+						<any>
+							<all>
+								<is>input.up</is>
+								<def var="newstate">{id: state.id, text: state.text, up:}</def>
+							</all>
+							<all>
+								<is>input.down</is>
+								<def var="newstate">{id: state.id, text: state.text, down:}</def>
+							</all>
+						</any>
+					</where>
+				</calc>
+			</state>
+			<actions>
+				<calc>
+					actions
+					<where>
+						<any>
+							<all>
+								<is>state.down</is>
+								<def var="actions">
+									<list>
+										<redraw/>
+										<output>state.id</output>
+										<delay>
+											<input>{up:}</input>
+											<by>200*time.msec</by>
+										</delay>
+									</list>
+								</def>
+							</all>
+							<def var="actions">
+								<list>
+									<redraw/>
+								</list>
+							</def>
+						</any>
+					</where>
+				</calc>
+				<list>
+					<redraw/>
+				</list>
+			</actions>
 		</respond>
 		<events>
-			<mousedown>{ down: }</onmousedown>
-			<mouseup>{ up: }</onmouseup>
-			<keydown code="code">buttonKeyInput(code, state.id, { Down: })</onkeydown>
-			<keyup code="code">buttonKeyInput(code, state.id, { Up: })</onkeyup>
+			<mousedown>{down:}</mousedown>
 		</events>
-	</applet>
-	<applet name="plus">
-		<state name="state">
-			<type name="ButtonState"/>
-		</state>
-		<content>buttonContent("+", state)</content>
-		<init id="id">
-			<state>{ up: }</state>
-		</init>
-		<respond>
-			<input name="input">
-				<type name="ButtonInput"/>
-			</input>
-			<state>input</state>
-			<actions>buttonActions(input, { plus: })</actions>
-		</respond>
-		<events>
-			<mousedown>{ down: }</onmousedown>
-			<mouseup>{ up: }</onmouseup>
-			<keydown code="code">buttonKeyInput(code, "+", { Down: })</onkeydown>
-			<keyup code="code">buttonKeyInput(code, "+", { Up: })</onkeyup>
-		</events>
+		<listen/>
 	</applet>
 </library>
