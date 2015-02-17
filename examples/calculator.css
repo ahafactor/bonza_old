@@ -1,10 +1,6 @@
 td {
 	vertical-align: middle;
 }
-@font-face {
-    font-family: Calculator;
-    src: url(digital-7.woff);
-}
 .calculator {
 	font-size: 2em;
 	border-radius: 6px;
@@ -22,7 +18,6 @@ td {
 	border-color: black;
 	background-color: Aquamarine;
 	padding: 5px;
-	font-family: Calculator;
 }
 .button-up {
 	font-size: 1.2em;
