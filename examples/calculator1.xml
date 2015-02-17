@@ -1,0 +1,287 @@
+<library>
+	<doc>
+		<title>Calculator Demo</title>
+		<author>Roman Movchan, Melbourne, Australia</author>
+	</doc>
+	<common>
+		<all>
+			<unwrap>core</unwrap>
+			<unwrap>string</unwrap>
+			<unwrap>format</unwrap>
+		</all>
+	</common>
+	<applet name="calculator">
+		<output>
+			<string/>
+		</output>
+		<state name="state">
+			<all>
+				<prop name="value">
+					<string/>
+				</prop>
+				<prop name="memory">
+					<number/>
+				</prop>
+				<prop name="command">
+					<any>
+						<prop name="none"/>
+						<prop name"clear"/>
+						<prop name="plus"/>
+						<prop name="minus"/>
+						<prop name="char">
+							<string/>
+						</prop>
+					</any>
+				</prop>
+			</all>
+		</state>
+		<content>
+			<text>
+				<table class="calculator">
+					<tr>
+						<td colspan="4">
+							<div class="[%classname('display')%]" id="display"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="clear">C</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="divide">[%nbsp%]/[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="multiply">[%nbsp%]x[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="minus">[%nbsp%]-[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="7">[%nbsp%]7[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="8">[%nbsp%]8[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="9">[%nbsp%]9[%nbsp%]</div>
+						</td>
+						<td rowspan="2">
+							<div class="[%classname('button')%]" id="plus">[%nbsp%]+[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="4">[%nbsp%]4[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="5">[%nbsp%]5[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="6">[%nbsp%]6[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="1">[%nbsp%]1[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="2">[%nbsp%]2[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="3">[%nbsp%]3[%nbsp%]</div>
+						</td>
+						<td rowspan="2">
+							<div class="[%classname('button')%]" id="equal">[%nbsp%]=[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							<div class="[%classname('button')%]" id="0">[%nbsp%]0[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="period">[%nbsp%].[%nbsp%]</div>
+						</td>
+					</tr>
+				</table>
+			</text>
+		</content>
+		<init id="id">
+			<state>{ value: "0", memory: 0, command: {none:} }</state>
+			<actions>
+				<list>
+					<output>state.value</output>
+				</list>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>
+				<calc>
+					newstate
+					<where>
+						<any>
+							<def var="newstate">
+								<calc>
+									{ value: value, memory: strToNum(value), command: {none:} }
+									<where>
+										<def var="value">
+											<text>[%state.value%][%input%]</text>
+										</def>
+									</where>
+								</calc>
+							</def>
+							<def var="newstate">
+								{ value: "ERROR", memory: state.memory, command: state.command }
+							</def>
+						</any>
+					</where>
+				</calc>
+			</state>
+			<actions>
+				<list>
+					<output>state.value</output>
+				</list>
+			</actions>
+		</respond>
+		<events/>
+		<listen>
+			<from applet="button" data="button">button</from>
+		</listen>
+	</applet>
+	<applet name="display">
+		<state name="state">
+			<string/>
+		</state>
+		<content>
+			<text>
+				<div class="display">[%state%]</div>
+			</text>
+		</content>
+		<init id="id">
+			<state>"0"</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>input</state>
+			<actions>
+				<list>
+					<redraw/>
+				</list>
+			</actions>
+		</respond>
+		<events/>
+		<listen>
+			<from applet="calculator" data="result">result</from>
+		</listen>
+	</applet>
+	<applet name="button">
+		<output>
+			<string/>
+		</output>
+		<state name="state">
+			<all>
+				<prop name="text">
+					<string/>
+				</prop>
+				<any>
+					<prop name="up"/>
+					<prop name="down"/>
+				</any>
+			</all>
+		</state>
+		<content>
+			<calc>
+				<text>
+					<div class="[%updown%]">[%state.text%]</div>
+				</text>
+				<where>
+					<any>
+						<all>
+							<is>state.down</is>
+							<def var="updown">"button-down"</def>
+						</all>
+						<def var="updown">"button-up"</def>
+					</any>
+				</where>
+			</calc>
+		</content>
+		<init id="id" content="text">
+			<state>{id: id, text: text, up:}</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<any>
+					<prop name="up"/>
+					<prop name="down"/>
+				</any>
+			</input>
+			<state>
+				<calc>
+					newstate
+					<where>
+						<any>
+							<all>
+								<is>input.up</is>
+								<def var="newstate">{id: state.id, text: state.text, up:}</def>
+							</all>
+							<all>
+								<is>input.down</is>
+								<def var="newstate">{id: state.id, text: state.text, down:}</def>
+							</all>
+						</any>
+					</where>
+				</calc>
+			</state>
+			<actions>
+				<calc>
+					actions
+					<where>
+						<any>
+							<all>
+								<is>state.down</is>
+								<def var="actions">
+									<list>
+										<redraw/>
+										<output>state.id</output>
+										<delay>
+											<input>{up:}</input>
+											<by>200*time.msec</by>
+										</delay>
+									</list>
+								</def>
+							</all>
+							<def var="actions">
+								<list>
+									<redraw/>
+								</list>
+							</def>
+						</any>
+					</where>
+				</calc>
+				<list>
+					<redraw/>
+				</list>
+			</actions>
+		</respond>
+		<events>
+			<mousedown>{down:}</mousedown>
+		</events>
+		<listen/>
+	</applet>
+</library>
