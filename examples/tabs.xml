@@ -1,0 +1,123 @@
+<library>
+	<common>
+		<all>
+			<unwrap>core</unwrap>
+			<unwrap>string</unwrap>
+		</all>
+	</common>
+	<applet name="page">
+		<output>
+			<string/>
+		</output>
+		<state name="state">
+			<string/>
+		</state>
+		<content>""</content>
+		<init id="id" content="content">
+			<state>{id: id, content: content}</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>state</state>
+			<actions>
+				<list>
+					<calc>
+						<output>state.content</output>
+						<where>
+							<is>input = state.id</is>
+						</where>
+					</calc>
+				</list>
+			</actions>
+		</respond>
+		<listen>
+			<from applet="tabs" data="choice">choice</from>
+		</listen>
+	</applet>
+	<applet name="tabs">
+		<state name="state">
+			<string/>
+		</state>
+		<content>state</content>
+		<init id="id" content="content">
+			<state>""</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>
+				<text>[%state%][%substr({ str: input, start: (length(input) - 1), length: 1 })%]</text>
+			</state>
+			<actions>
+				<list>
+					<redraw/>
+				</list>
+			</actions>
+		</respond>
+		<events/>
+		<listen>
+			<from applet="button" data="text">text</from>
+		</listen>
+	</applet>
+	<applet name="test">
+		<output>
+			<none/>
+		</output>
+		<state name="state">
+			<prop name="none"/>
+		</state>
+		<content>
+			<text>
+				<table>
+					<tr>
+						<td colspan="2">
+							<div class="bonza-display" id="display"></div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="bonza-button" id="btn1">[%nbsp%]1[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="bonza-button" id="btn2">[%nbsp%]2[%nbsp%]</div>
+						</td>
+					</tr>
+				</table>
+			</text>
+		</content>
+		<init id="id" content="content">
+			<state>{none:}</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<string/>
+			</input>
+			<state>state</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</respond>
+		<events/>
+		<listen/>
+	</applet>
+</library>

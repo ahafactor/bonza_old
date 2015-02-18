@@ -3,7 +3,7 @@ td {
 }
 @font-face {
     font-family: Calculator;
-    src: url(digital-7.woff);
+    src: url('alarm clock.woff');
 }
 .calculator {
 	font-size: 2em;
@@ -11,13 +11,14 @@ td {
 	border: 1px solid;
 	border-style: outset;
 	border-color: black;
-	background-color: IndianRed;
-	padding: 5px;
+	background-color: DeepSkyBlue;
+	padding: 10px;
 }
 .display {
 	margin: 5px;
 	text-align: right;
-	border: 1px solid;
+	border: 2px solid;
+	border-style: inset;
 	border-radius: 4px;
 	border-color: black;
 	background-color: Aquamarine;
@@ -30,12 +31,18 @@ td {
 	border-radius: 6px;
 	border-style: outset;
 	cursor: pointer;
-	background-color: silver;
-	color: white;
-	margin-left: 0px;
-	margin-right: 2px;
+	color: black;
+	background-color: MintCream;
+	margin-left: 5px;
+	margin-right: 6px;
+	margin-top: 5px;
+	margin-bottom: 6px;
 	text-align: center;
 	font-family: "Arial";
+	padding-left: 20px;
+	padding-right: 20px;
+	padding-top: 5px;
+	padding-bottom: 5px;
 }
 .button-down {
 	font-size: 1.2em;
@@ -43,10 +50,13 @@ td {
 	border-radius: 6px;
 	border-style: none;
 	cursor: pointer;
-	background-color: silver;
-	color: white;
-	margin-left: 2px;
-	margin-right: 0px;
+	color: black;
+	background-color: MintCream;
+	margin-left: 6px;
+	margin-right: 5px;
+	margin-top: 6px;
+	margin-bottom: 5px;
 	text-align: center;
 	font-family: "Arial";
+	padding: 5px;
 }

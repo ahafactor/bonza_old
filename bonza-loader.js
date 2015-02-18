@@ -24,17 +24,26 @@ function loadBonzaLibrary(url) {
 			numToStr : function(x) {
 				return x.toString();
 			},
-			strToNum : function(x) {
-				var result = Number(x);
-				if(isNaN(result)){
-					throw "Error";
+			formatNum : function(arg) {
+				if(arg.hasOwnProperty("prec")){
+					return arg.num.toPrecision(arg.prec);
+				} else {
+					return arg.num.toFixed(arg.dec);
 				}
 			},
-			strToInt : function(x) {
-				var result = Math.trunc(Number(x));
+			strToNum : function(s) {
+				var result = parseFloat(s);
 				if(isNaN(result)){
 					throw "Error";
 				}
+				return result;
+			},
+			strToInt : function(s) {
+				var result = parseInt(s);
+				if(isNaN(result)){
+					throw "Error";
+				}
+				return result;
 			},
 		},
 		string : {
@@ -93,7 +102,11 @@ function loadBonzaLibrary(url) {
 				} else if (parseString()) {
 					return true;
 				} else if (parseNumber()) {
-					if (parsePlus() || parseMinus() || parseEqual()) {
+					if (parseMult() || parseDiv()) {
+					}
+					if (parsePlus() || parseMinus()) {
+					}
+					if(parseEqual() || parseLess() || parseMore()) {						
 					}
 					return true;
 				} else if (parseObject()) {
@@ -101,7 +114,11 @@ function loadBonzaLibrary(url) {
 				} else if (parseVar()) {
 					while (parseApply() || parseIndex() || parseDot()) {
 					}
-					if (parsePlus() || parseMinus()|| parseEqual()) {
+					if (parseMult() || parseDiv()) {
+					}
+					if (parsePlus() || parseMinus()) {
+					}
+					if(parseEqual() || parseLess() || parseMore()) {						
 					}
 					return true;
 				} else {
@@ -302,6 +319,38 @@ function loadBonzaLibrary(url) {
 				}
 			}
 
+			function parseMult() {
+				var prev;
+				if (token !== null && token[0] === "*") {
+					prev = result;
+					token = scanner.exec(formula);
+					if (parseFormula()) {
+						result *= prev;
+					} else {
+						throw "Fail";
+					}
+					return true;
+				} else {
+					return false;
+				}
+			}
+
+			function parseDiv() {
+				var prev;
+				if (token !== null && token[0] === "/") {
+					prev = result;
+					token = scanner.exec(formula);
+					if (parseFormula()) {
+						result = prev / result;
+					} else {
+						throw "Fail";
+					}
+					return true;
+				} else {
+					return false;
+				}
+			}
+
 			function parseLess() {
 				var prev;
 				if (token !== null && token[0] === "<") {
@@ -309,6 +358,22 @@ function loadBonzaLibrary(url) {
 					token = scanner.exec(formula);
 					if (parseFormula()) {
 						result = prev < result;
+					} else {
+						throw "Fail";
+					}
+					return true;
+				} else {
+					return false;
+				}
+			}
+
+			function parseMore() {
+				var prev;
+				if (token !== null && token[0] === ">") {
+					prev = result;
+					token = scanner.exec(formula);
+					if (parseFormula()) {
+						result = prev > result;
 					} else {
 						throw "Fail";
 					}

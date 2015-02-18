@@ -3,11 +3,25 @@
 		<title>Calculator Demo</title>
 		<author>Roman Movchan, Melbourne, Australia</author>
 	</doc>
+	<type name="Command">
+		<any>
+			<prop name="equal"/>
+			<prop name="clear"/>
+			<prop name="plus"/>
+			<prop name="minus"/>
+			<prop name="multiply"/>
+			<prop name="divide"/>
+			<prop name="char">
+				<string/>
+			</prop>
+		</any>
+	</type>
 	<common>
 		<all>
 			<unwrap>core</unwrap>
 			<unwrap>string</unwrap>
 			<unwrap>format</unwrap>
+			<def var="maxlen">19</def>
 		</all>
 	</common>
 	<applet name="calculator">
@@ -19,95 +33,91 @@
 				<prop name="value">
 					<string/>
 				</prop>
-				<prop name="memory">
-					<number/>
-				</prop>
+				<any>
+					<prop name="result">
+						<number/>
+					</prop>
+					<prop name="error"/>
+				</any>
 				<prop name="command">
-					<any>
-						<prop name="none"/>
-						<prop name="char">
-							<string/>
-						</prop>
-					</any>
+					<type name="Command"/>
 				</prop>
 			</all>
 		</state>
 		<content>
 			<text>
-				<span>
-					<table class="calculator">
-						<tr>
-							<td colspan="4">
-								<div class="[%classname('display')%]" id="display"/>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<div class="[%classname('button')%]" id="clear">C</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="divide">[%nbsp%]/[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="multiply">[%nbsp%]x[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="minus">[%nbsp%]-[%nbsp%]</div>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<div class="[%classname('button')%]" id="7">[%nbsp%]7[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="8">[%nbsp%]8[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="9">[%nbsp%]9[%nbsp%]</div>
-							</td>
-							<td rowspan="2">
-								<div class="[%classname('button')%]" id="plus">[%nbsp%]+[%nbsp%]</div>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<div class="[%classname('button')%]" id="4">[%nbsp%]4[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="5">[%nbsp%]5[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="6">[%nbsp%]6[%nbsp%]</div>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<div class="[%classname('button')%]" id="1">[%nbsp%]1[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="2">[%nbsp%]2[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="3">[%nbsp%]3[%nbsp%]</div>
-							</td>
-							<td rowspan="2">
-								<div class="[%classname('button')%]" id="equal">[%nbsp%]=[%nbsp%]</div>
-							</td>
-						</tr>
-						<tr>
-							<td colspan="2">
-								<div class="[%classname('button')%]" id="0">[%nbsp%]0[%nbsp%]</div>
-							</td>
-							<td>
-								<div class="[%classname('button')%]" id="period">[%nbsp%].[%nbsp%]</div>
-							</td>
-						</tr>
-					</table>
-				</span>
+				<table class="calculator">
+					<tr>
+						<td colspan="4">
+							<div class="[%classname('display')%]" id="display"/>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="clear">C</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="divide">[%nbsp%]/[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="multiply">[%nbsp%]x[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="minus">[%nbsp%]-[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="7">[%nbsp%]7[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="8">[%nbsp%]8[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="9">[%nbsp%]9[%nbsp%]</div>
+						</td>
+						<td rowspan="2">
+							<div class="[%classname('button')%]" id="plus"><br/>[%nbsp%]+[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="4">[%nbsp%]4[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="5">[%nbsp%]5[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="6">[%nbsp%]6[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<div class="[%classname('button')%]" id="1">[%nbsp%]1[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="2">[%nbsp%]2[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="3">[%nbsp%]3[%nbsp%]</div>
+						</td>
+						<td rowspan="2">
+							<div class="[%classname('button')%]" id="equal"><br/>[%nbsp%]=[%nbsp%]</div>
+						</td>
+					</tr>
+					<tr>
+						<td colspan="2">
+							<div class="[%classname('button')%]" id="0">[%nbsp%]0[%nbsp%]</div>
+						</td>
+						<td>
+							<div class="[%classname('button')%]" id="period">[%nbsp%].[%nbsp%]</div>
+						</td>
+					</tr>
+				</table>
 			</text>
 		</content>
 		<init id="id">
-			<state>{ value: "0", memory: 0, command: {none:} }</state>
+			<state>{ value: "0", result:0, command: {equal:} }</state>
 			<actions>
 				<list>
 					<output>state.value</output>
@@ -116,7 +126,7 @@
 		</init>
 		<respond>
 			<input name="input">
-				<string/>
+				<type name="Command"/>
 			</input>
 			<state>
 				<calc>
@@ -124,21 +134,87 @@
 					<where>
 						<any>
 							<all>
-								<is>input = "equal"</is>
+								<is>input.clear</is>
+								<def var="newstate">{ value: "0", result: 0, command: {equal:} }</def>
 							</all>
-							<def var="newstate">
-								<calc>
-									{ value: value, memory: strToNum(value), command: {none:} }
-									<where>
-										<def var="value">
-											<text>[%state.value%][%input%]</text>
-										</def>
-									</where>
-								</calc>
-							</def>
-							<def var="newstate">
-								{ value: "ERROR", memory: state.memory, command: state.command }
-							</def>
+							<all>
+								<is>input.char</is>
+								<def var="newstate">
+									<calc>
+										{ value: newvalue, result: state.result, command: state.command }
+										<where>
+											<any>
+												<all>
+													<any>
+														<is>state.value = "0"</is>
+														<is>state.value = "ERROR"</is>
+													</any>
+													<def var="newvalue">input.char</def>
+												</all>
+												<all>
+													<def var="newvalue">
+														<text>[%state.value%][%input.char%]</text>
+													</def>
+													<is>strToNum(newvalue)</is>
+												</all>
+												<def var="newvalue">state.value</def>
+											</any>
+										</where>
+									</calc>
+								</def>
+							</all>
+							<all>
+								<any>
+									<is>input.plus</is>
+									<is>input.minus</is>
+									<is>input.multiply</is>
+									<is>input.divide</is>
+								</any>
+								<any>
+									<all>
+										<is>state.command.plus</is>
+										<def var="result">state.result + strToNum(state.value)</def>
+									</all>
+									<all>
+										<is>state.command.minus</is>
+										<def var="result">state.result - strToNum(state.value)</def>
+									</all>
+									<all>
+										<is>state.command.multiply</is>
+										<def var="result">state.result * strToNum(state.value)</def>
+									</all>
+									<all>
+										<is>state.command.divide</is>
+										<def var="result">state.result / strToNum(state.value)</def>
+									</all>
+									<def var="result">strToNum(state.value)</def>
+								</any>
+								<def var="newstate">{ value: "0", result: result, command: input }</def>
+							</all>
+							<all>
+								<is>input.equal</is>
+								<any>
+									<all>
+										<is>state.command.plus</is>
+										<def var="result">state.result + strToNum(state.value)</def>
+									</all>
+									<all>
+										<is>state.command.minus</is>
+										<def var="result">state.result - strToNum(state.value)</def>
+									</all>
+									<all>
+										<is>state.command.multiply</is>
+										<def var="result">state.result * strToNum(state.value)</def>
+									</all>
+									<all>
+										<is>state.command.divide</is>
+										<def var="result">state.result / strToNum(state.value)</def>
+									</all>
+									<def var="result">state.result</def>
+								</any>
+								<def var="newstate">{ value: numToStr(result), result: result, command: input }</def>
+							</all>
+							<def var="newstate">{ value: "ERROR", result: 0, command: {equal:} }</def>
 						</any>
 					</where>
 				</calc>
@@ -151,7 +227,44 @@
 		</respond>
 		<events/>
 		<listen>
-			<from applet="button" data="button">button</from>
+			<from applet="button" data="button">
+				<calc>
+					input
+					<where>
+						<any>
+							<all>
+								<is>button = "clear"</is>
+								<def var="input">{clear:}</def>
+							</all>
+							<all>
+								<is>button = "equal"</is>
+								<def var="input">{equal:}</def>
+							</all>
+							<all>
+								<is>button = "plus"</is>
+								<def var="input">{plus:}</def>
+							</all>
+							<all>
+								<is>button = "minus"</is>
+								<def var="input">{minus:}</def>
+							</all>
+							<all>
+								<is>button = "multiply"</is>
+								<def var="input">{multiply:}</def>
+							</all>
+							<all>
+								<is>button = "divide"</is>
+								<def var="input">{divide:}</def>
+							</all>
+							<all>
+								<is>button = "period"</is>
+								<def var="input">{char: "."}</def>
+							</all>
+							<def var="input">{char: button}</def>
+						</any>
+					</where>
+				</calc>
+			</from>
 		</listen>
 	</applet>
 	<applet name="display">
@@ -159,9 +272,18 @@
 			<string/>
 		</state>
 		<content>
-			<text>
-				<div class="display">[%state%]</div>
-			</text>
+			<calc>
+				<text><div class="display">[%value%]</div></text>
+				<where>
+					<any>
+						<all>
+							<is>length(state) > maxlen</is>
+							<def var="value">"LONG"</def>
+						</all>
+						<def var="value">state</def>
+					</any>
+				</where>
+			</calc>
 		</content>
 		<init id="id">
 			<state>"0"</state>
@@ -276,9 +398,6 @@
 						</any>
 					</where>
 				</calc>
-				<list>
-					<redraw/>
-				</list>
 			</actions>
 		</respond>
 		<events>
