@@ -41,7 +41,7 @@
 			<from applet="tabs" data="choice">choice</from>
 		</listen>
 	</applet>
-	<applet name="tabs">
+	<applet name="tabset">
 		<state name="state">
 			<string/>
 		</state>

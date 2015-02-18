@@ -1,5 +1,27 @@
 function loadBonzaLibrary(url) {
 
+	function getChildren(node) {
+		var i = 0;
+		var result = [];
+		for(i = 0; i < node.childNodes.length; i++){
+			if (node.childNodes[i].nodeType != 3 || node.childNodes[i].nodeValue.trim() != "") {
+				result.push(node.childNodes[i]);
+			}				
+		}
+		return result;
+	}
+
+	function findChild(node, name) {
+		var i = 0;
+		var result = [];
+		for(i = 0; i < node.children.length; i++){
+			if (node.children[i].nodeValue === name) {
+				return node.children[i];
+			}				
+		}
+		throw "Error";
+	}
+
 	var core = {
 		classname : function(name) {
 			return "bonza-" + name;
@@ -8,6 +30,9 @@ function loadBonzaLibrary(url) {
 		math : {
 			sin : function(x) {
 				return Math.sin(x);
+			},
+			trunc : function(x) {
+				return Math.trunc(x);
 			}
 		},
 		time : {
@@ -45,6 +70,9 @@ function loadBonzaLibrary(url) {
 				}
 				return result;
 			},
+			dateToStr : function(x) {
+				return Date(x).toString();
+			},
 		},
 		string : {
 			substr : function(args){
@@ -66,22 +94,41 @@ function loadBonzaLibrary(url) {
 					result.concat(arg[i]);
 				}
 				return result;
+			},
+			split: function(arg){
+				return arg.str.split(arg.sep);
+			},
+			charAt: function(arg){
+				return arg.str.charAt(arg.pos);
+			},
+			trim: function(str){
+				return str.trim();
+			}
+		},
+		xml : {
+			parseText: function(text){
+				var parser;
+				var xmlDoc;
+				if (window.DOMParser) {
+					parser = new DOMParser();
+					xmlDoc = parser.parseFromString(text, "text/xml");
+				} else {
+					xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+					xmlDoc.async = false;
+					xmlDoc.loadXML(text);
+				}
+				return xmlDoc.children[0];
+			},
+			getChildren: function(node){
+				return getChildren(node);
+			},
+			findChild: function(arg){
+				findChild(arg.node, arg.name);
 			}
 		}
 	};
 	
 	var resume;
-
-	function getChildren(node) {
-		var i = 0;
-		var result = [];
-		for(i = 0; i < node.childNodes.length; i++){
-			if (node.childNodes[i].nodeType != 3 || node.childNodes[i].nodeValue.trim() != "") {
-				result.push(node.childNodes[i]);
-			}				
-		}
-		return result;
-	}
 
 	function ExprEngine(actions) {
 
@@ -676,6 +723,8 @@ function loadBonzaLibrary(url) {
 		var j;
 		
 		this.name = xml.getAttribute("name");
+		this.events = {};
+		this.listeners = {};
 		
 		for(i = 0; i < xml.children.length; i++){
 			temp = xml.children[i];
@@ -698,13 +747,11 @@ function loadBonzaLibrary(url) {
 				this.respActions = engine.firstExpr(temp.getElementsByTagName("actions")[0]);
 				break;
 			case "events":
-				this.events = {};
 				for ( j = 0; j < temp.children.length; j++) {
 					this.events[temp.children[j].nodeName] = engine.firstExpr(temp.children[j]);
 				}
 				break;
-			case "listen":
-				this.listeners = {};
+			case "accept":
 				for ( j = 0; j < temp.children.length; j++) {
 					this.listeners[temp.children[j].getAttribute("applet")] = { data: temp.children[j].getAttribute("data"), expr: engine.firstExpr(temp.children[j]) };
 				}
@@ -738,19 +785,21 @@ function loadBonzaLibrary(url) {
 			},
 			mouseover : function(e) {
 				var id = e.currentTarget.getAttribute("id");
-				var instance = this.instances[id];
-				this.local[this.statename] = instance;
-				if (engine.evalExpr(events.mouseover, local, output)) {
+				var instance = applet.instances[id];
+				applet.local[applet.statename] = instance;
+				if (engine.evalExpr(applet.events.mouseover, applet.local, output)) {
 					//e.stopPropagation();
-					this.respond(id, output.result);
+					e.preventDefault();
+					applet.respond(id, output.result);
 				}
 			},
 			mouseout : function(e) {
 				var id = e.currentTarget.getAttribute("id");
-				var instance = instances[id];
-				local[statename] = instance;
-				if (engine.evalExpr(events.mouseout, local, output)) {
-					e.stopPropagation();
+				var instance = applet.instances[id];
+				applet.local[applet.statename] = instance;
+				if (engine.evalExpr(applet.events.mouseout, applet.local, output)) {
+					//e.stopPropagation();
+					e.preventDefault();
 					applet.respond(id, output.result);
 				}
 			},
@@ -900,13 +949,64 @@ function loadBonzaLibrary(url) {
 					setTimeout(function(){action(applet, id);}, interval);
 				};
 			},
-			get : function(url, success, error) {
+			time : function(nowname, success) {
 				return function(applet, id) {
-					jQuery.get(url, function(data, status) {
-						applet.respond(id, success(data));
-					}).fail(function(jqXHR, textStatus, errorThrown) {
-						applet.respond(id, error(textStatus));
-					});
+				var local = {};
+				for (prop in applet.local) {
+					local[prop] = applet.local[prop];
+				}
+				local[nowname] = Number(Date());
+            	if(engine.evalExpr(success, local, output)){
+					applet.respond(id, output.result);
+				};
+			},
+			random : function(numname, success) {
+				return function(applet, id) {
+				var local = {};
+				for (prop in applet.local) {
+					local[prop] = applet.local[prop];
+				}
+				local[numname] = Math.random();
+            	if(engine.evalExpr(success, local, output)){
+					applet.respond(id, output.result);
+				};
+			},
+			gettext : function(url, resultname, success) {
+				return function(applet, id) {
+			        var xmlhttp = new XMLHttpRequest();
+			        xmlhttp.onreadystatechange = function() {
+			            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+							var local = {};
+							for (prop in applet.local) {
+								local[prop] = applet.local[prop];
+							}
+							local[resultname] = xmlhttp.responseText;
+			            	if(engine.evalExpr(success, local, output)){
+								applet.respond(id, output.result);
+							}
+			            }
+			        };
+			        xmlhttp.open("GET", url, true);
+			        xmlhttp.send();
+				};
+			},
+			getxml : function(url, resultname, success) {
+				return function(applet, id) {
+			        var xmlhttp = new XMLHttpRequest();
+			        xmlhttp.onreadystatechange = function() {
+			            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+							var local = {};
+							for (prop in applet.local) {
+								local[prop] = applet.local[prop];
+							}
+							local[resultname] = xmlhttp.responseXML;
+			            	if(engine.evalExpr(success, local, output)){
+								applet.respond(id, output.result);
+							}
+			            }
+			        };
+			        xmlhttp.open("GET", url, true);
+			        xmlhttp.send();
 				};
 			}
 		};
@@ -961,7 +1061,6 @@ function loadBonzaLibrary(url) {
 		}
 
 		temp = xml.getElementsByTagName("applet");
-		//applets.length = temp.length;
 		for (var i = 0; i < temp.length; i++) {
 			name = temp[i].getAttribute("name");
 			applet = new Applet(temp[i], lib.context, engine);
@@ -979,13 +1078,13 @@ function loadBonzaLibrary(url) {
 	}
 
 
-	jQuery.get(url, function(xml, status) {
-		if (status === "success") {
-			var lib = new Library(xml.children[0]);
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+			var lib = new Library(xmlhttp.responseXML.children[0]);
 			lib.run();
-			//setInterval(lib.run, 100);
-		}
-	}).fail(function(jqXHR, textStatus, errorThrown) {
-		alert(textStatus);
-	});
+        }
+    };
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
 }

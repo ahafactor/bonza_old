@@ -33,12 +33,9 @@
 				<prop name="value">
 					<string/>
 				</prop>
-				<any>
-					<prop name="result">
-						<number/>
-					</prop>
-					<prop name="error"/>
-				</any>
+				<prop name="result">
+					<number/>
+				</prop>
 				<prop name="command">
 					<type name="Command"/>
 				</prop>
@@ -225,8 +222,7 @@
 				</list>
 			</actions>
 		</respond>
-		<events/>
-		<listen>
+		<accept>
 			<from applet="button" data="button">
 				<calc>
 					input
@@ -265,7 +261,7 @@
 					</where>
 				</calc>
 			</from>
-		</listen>
+		</accept>
 	</applet>
 	<applet name="display">
 		<state name="state">
@@ -304,10 +300,9 @@
 				</list>
 			</actions>
 		</respond>
-		<events/>
-		<listen>
+		<accept>
 			<from applet="calculator" data="result">result</from>
-		</listen>
+		</accept>
 	</applet>
 	<applet name="button">
 		<output>
@@ -385,7 +380,7 @@
 										<output>state.id</output>
 										<delay>
 											<input>{up:}</input>
-											<by>200*time.msec</by>
+											<by>100*time.msec</by>
 										</delay>
 									</list>
 								</def>
@@ -403,6 +398,5 @@
 		<events>
 			<mousedown>{down:}</mousedown>
 		</events>
-		<listen/>
 	</applet>
 </library>
