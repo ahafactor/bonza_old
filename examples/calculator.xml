@@ -21,6 +21,7 @@
 			<unwrap>core</unwrap>
 			<unwrap>string</unwrap>
 			<unwrap>format</unwrap>
+			<unwrap>math</unwrap>
 			<def var="maxlen">19</def>
 		</all>
 	</common>
@@ -37,6 +38,9 @@
 					<number/>
 				</prop>
 				<prop name="command">
+					<type name="Command"/>
+				</prop>
+				<prop name="op">
 					<type name="Command"/>
 				</prop>
 			</all>
@@ -114,7 +118,7 @@
 			</text>
 		</content>
 		<init id="id">
-			<state>{ value: "0", result:0, command: {equal:} }</state>
+			<state>{ value: "0", result: 0, command: {clear:}, op: {clear:} }</state>
 			<actions>
 				<list>
 					<output>state.value</output>
@@ -132,23 +136,23 @@
 						<any>
 							<all>
 								<is>input.clear</is>
-								<def var="newstate">{ value: "0", result: 0, command: {equal:} }</def>
+								<def var="newstate">{ value: "0", result: 0, command: {clear:}, op: {clear:} }</def>
 							</all>
 							<all>
 								<is>input.char</is>
 								<def var="newstate">
 									<calc>
-										{ value: newvalue, result: state.result, command: state.command }
+										{ value: newvalue, result: state.result, command: input, op: state.op }
 										<where>
 											<any>
 												<all>
-													<any>
-														<is>state.value = "0"</is>
-														<is>state.value = "ERROR"</is>
-													</any>
+													<not>
+														<is>state.command.char</is>
+													</not>
 													<def var="newvalue">input.char</def>
 												</all>
 												<all>
+													<is>length(state.value) &lt; maxlen</is>
 													<def var="newvalue">
 														<text>[%state.value%][%input.char%]</text>
 													</def>
@@ -169,49 +173,72 @@
 								</any>
 								<any>
 									<all>
-										<is>state.command.plus</is>
+										<is>state.op.plus</is>
 										<def var="result">state.result + strToNum(state.value)</def>
 									</all>
 									<all>
-										<is>state.command.minus</is>
+										<is>state.op.minus</is>
 										<def var="result">state.result - strToNum(state.value)</def>
 									</all>
 									<all>
-										<is>state.command.multiply</is>
+										<is>state.op.multiply</is>
 										<def var="result">state.result * strToNum(state.value)</def>
 									</all>
 									<all>
-										<is>state.command.divide</is>
+										<is>state.op.divide</is>
 										<def var="result">state.result / strToNum(state.value)</def>
 									</all>
 									<def var="result">strToNum(state.value)</def>
 								</any>
-								<def var="newstate">{ value: "0", result: result, command: input }</def>
+								<def var="newstate">{ value: state.value, result: result, command: input, op: input }</def>
 							</all>
 							<all>
 								<is>input.equal</is>
 								<any>
 									<all>
-										<is>state.command.plus</is>
+										<is>state.op.plus</is>
 										<def var="result">state.result + strToNum(state.value)</def>
 									</all>
 									<all>
-										<is>state.command.minus</is>
+										<is>state.op.minus</is>
 										<def var="result">state.result - strToNum(state.value)</def>
 									</all>
 									<all>
-										<is>state.command.multiply</is>
+										<is>state.op.multiply</is>
 										<def var="result">state.result * strToNum(state.value)</def>
 									</all>
 									<all>
-										<is>state.command.divide</is>
+										<is>state.op.divide</is>
 										<def var="result">state.result / strToNum(state.value)</def>
 									</all>
 									<def var="result">state.result</def>
 								</any>
-								<def var="newstate">{ value: numToStr(result), result: result, command: input }</def>
+								<def var="newstate">
+									<calc>
+										{ value: displayResult, result: result, command: input, op: input }
+										<where>
+											<any>
+												<all>
+													<any>
+														<is>NaN(result)</is>
+														<not>
+															<is>finite(result)</is>
+														</not>
+													</any>
+													<def var="displayResult">"ERROR"</def>
+												</all>
+												<all>
+													<def var="str">numToStr(result)</def>
+													<is>length(str) > maxlen</is>
+													<def var="displayResult">formatNum({num: result, exp:})</def>
+												</all>
+												<def var="displayResult">numToStr(result)</def>
+											</any>
+										</where>
+									</calc>
+								</def>
 							</all>
-							<def var="newstate">{ value: "ERROR", result: 0, command: {equal:} }</def>
+							<def var="newstate">{ value: "ERROR", result: 0, command: input, op: input }</def>
 						</any>
 					</where>
 				</calc>
@@ -223,40 +250,40 @@
 			</actions>
 		</respond>
 		<accept>
-			<from applet="button" data="button">
+			<from applet="button" data="id">
 				<calc>
 					input
 					<where>
 						<any>
 							<all>
-								<is>button = "clear"</is>
+								<is>id = "clear"</is>
 								<def var="input">{clear:}</def>
 							</all>
 							<all>
-								<is>button = "equal"</is>
+								<is>id = "equal"</is>
 								<def var="input">{equal:}</def>
 							</all>
 							<all>
-								<is>button = "plus"</is>
+								<is>id = "plus"</is>
 								<def var="input">{plus:}</def>
 							</all>
 							<all>
-								<is>button = "minus"</is>
+								<is>id = "minus"</is>
 								<def var="input">{minus:}</def>
 							</all>
 							<all>
-								<is>button = "multiply"</is>
+								<is>id = "multiply"</is>
 								<def var="input">{multiply:}</def>
 							</all>
 							<all>
-								<is>button = "divide"</is>
+								<is>id = "divide"</is>
 								<def var="input">{divide:}</def>
 							</all>
 							<all>
-								<is>button = "period"</is>
+								<is>id = "period"</is>
 								<def var="input">{char: "."}</def>
 							</all>
-							<def var="input">{char: button}</def>
+							<def var="input">{char: id}</def>
 						</any>
 					</where>
 				</calc>
@@ -268,26 +295,10 @@
 			<string/>
 		</state>
 		<content>
-			<calc>
-				<text><div class="display">[%value%]</div></text>
-				<where>
-					<any>
-						<all>
-							<is>length(state) > maxlen</is>
-							<def var="value">"LONG"</def>
-						</all>
-						<def var="value">state</def>
-					</any>
-				</where>
-			</calc>
+			<text><div class="display">[%state%]</div></text>
 		</content>
 		<init id="id">
 			<state>"0"</state>
-			<actions>
-				<no>
-					<action/>
-				</no>
-			</actions>
 		</init>
 		<respond>
 			<input name="input">
@@ -301,7 +312,7 @@
 			</actions>
 		</respond>
 		<accept>
-			<from applet="calculator" data="result">result</from>
+			<from applet="calculator" data="value">value</from>
 		</accept>
 	</applet>
 	<applet name="button">
@@ -337,11 +348,6 @@
 		</content>
 		<init id="id" content="text">
 			<state>{id: id, text: text, up:}</state>
-			<actions>
-				<no>
-					<action/>
-				</no>
-			</actions>
 		</init>
 		<respond>
 			<input name="input">
