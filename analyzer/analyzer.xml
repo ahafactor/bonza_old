@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<library>
+	<applet name="source">
+		<output>
+			<like>core.xml.parseText("")</like>
+		</output>
+		<state name="state">
+			<all>
+				<prop name="id">
+					<string/>
+				</prop>
+				<prop name="source">
+					<string/>
+				</prop>
+			</all>
+		</state>
+		<content>state.source</content>
+		<init id="id" content="source">
+			<state>{id: id, source: source}</state>
+		</init>
+		<respond>
+			<input name="input">
+				<prop name="ready"/>
+			</input>
+			<state>state</state>
+			<actions>
+				<output>{id: state.id, code: core.xml.parseText(state.source)}</output>
+			</actions>
+		</respond>
+	</applet>
+	<applet name="library">
+		<state name="state">
+			<all>
+				<prop name="id">
+					<string/>
+				</prop>
+				<prop name="common">
+					<like>core.code.library().common</like>
+				</prop>
+				<prop name="applets">
+					<like>core.code.library().applets</like>
+				</prop>
+			</all>
+		</state>
+		<content>
+			
+		</content>
+		<init id="id" content="content">
+			<state><invalid>???</invalid></state>
+		</init>
+		<respond>
+			
+		</respond>
+		<accept>
+			<from applet="source" data="msg">
+				<calc>
+					msg.code
+					<where>
+						<all>
+							<is>msg.id = substr({str: state.id, start: 0, len: length(msg.id)})</is>
+							<is>substr({str: state.id, start: length(msg.id), len: 4}) = "-lib"</is>
+						</all>
+					</where>
+				</calc>
+			</from>
+		</accept>
+	</applet>
+</library>

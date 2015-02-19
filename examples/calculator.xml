@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" ?>
 <library>
 	<doc>
 		<title>Calculator Demo</title>
@@ -229,10 +230,14 @@
 												</all>
 												<all>
 													<def var="str">numToStr(result)</def>
-													<is>length(str) > maxlen</is>
-													<def var="displayResult">formatNum({num: result, exp:})</def>
+													<any>
+														<all>
+															<is>length(str) > maxlen</is>
+															<def var="displayResult">formatNum({num: result, exp: 3})</def>
+														</all>
+														<def var="displayResult">numToStr(result)</def>
+													</any>
 												</all>
-												<def var="displayResult">numToStr(result)</def>
 											</any>
 										</where>
 									</calc>

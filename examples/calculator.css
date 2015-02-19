@@ -1,17 +1,13 @@
 td {
 	vertical-align: middle;
 }
-@font-face {
-    font-family: Calculator;
-    src: url('alarm clock.woff');
-}
 .calculator {
 	font-size: 2em;
-	border-radius: 6px;
+	border-radius: 10px;
 	border: 1px solid;
 	border-style: outset;
 	border-color: black;
-	background-color: DeepSkyBlue;
+	background-color: FloralWhite;
 	padding: 10px;
 }
 .display {
@@ -23,7 +19,7 @@ td {
 	border-color: black;
 	background-color: Aquamarine;
 	padding: 5px;
-	font-family: Calculator;
+	font-family: Courier;
 }
 .button-up {
 	font-size: 1.2em;
@@ -45,7 +41,6 @@ td {
 	font-size: 1.2em;
 	border: 1px solid;
 	border-radius: 6px;
-	border-style: none;
 	cursor: pointer;
 	color: black;
 	background-color: MintCream;
