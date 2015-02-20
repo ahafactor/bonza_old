@@ -243,7 +243,7 @@
 									</calc>
 								</def>
 							</all>
-							<def var="newstate">{ value: "ERROR", result: 0, command: input, op: input }</def>
+							<def var="newstate">{ value: "ERROR", result: 0, command: input, op: state.op }</def>
 						</any>
 					</where>
 				</calc>

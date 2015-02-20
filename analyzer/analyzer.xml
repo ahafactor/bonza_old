@@ -2,7 +2,7 @@
 <library>
 	<applet name="source">
 		<output>
-			<like>core.xml.parseText("")</like>
+			<like>{id: "", code: core.xml.parseText("")}</like>
 		</output>
 		<state name="state">
 			<all>
@@ -20,13 +20,16 @@
 		</init>
 		<respond>
 			<input name="input">
-				<prop name="ready"/>
+				<string/>
 			</input>
-			<state>state</state>
+			<state>{id: id, source: input}</state>
 			<actions>
 				<output>{id: state.id, code: core.xml.parseText(state.source)}</output>
 			</actions>
 		</respond>
+		<events>
+			<change data="content">content</change>
+		</events>
 	</applet>
 	<applet name="library">
 		<state name="state">
@@ -34,22 +37,98 @@
 				<prop name="id">
 					<string/>
 				</prop>
-				<prop name="common">
-					<like>core.code.library().common</like>
-				</prop>
-				<prop name="applets">
-					<like>core.code.library().applets</like>
-				</prop>
+				<any>
+					<prop name="info">
+						<like>core.code.analyze(core.code.self)</like>
+					</prop>
+					<prop name="none"/>
+				</any>
 			</all>
 		</state>
 		<content>
-			
+			<calc>
+				content
+				<where>
+					<any>
+						<all>
+							<is>state.info.errors</is>
+							<def var="content">
+								<calc>
+									<text>
+										<table class="analyzer-library">
+											<tr class="analyzer-header">
+												<td colspan="2">
+													<h3>Library contains errors:</h3>
+												</td>
+											</tr>
+											[%core.string.join({parts: errors, sep: "")%]
+										</table>
+									</text>
+									<where>
+										<def var="errors">
+											<array>
+												<size>state.info.errors#</size>
+												<item index="i">
+													<text>
+														<tr>
+															<td>
+																<span class="glyphicon halflings-alert"></span>
+															</td>
+															<td>
+																<span class="analyzer-errortext">[%state.info.errors[i]%]</span>
+															</td>
+														</tr>
+													</text>
+												</item>
+											</array>
+										</def>
+									</where>
+								</calc>
+							</def>
+						</all>
+						<def var="content">
+							<calc>
+								<text>
+									<table class="analyzer-library">
+										<tr class="analyzer-header">
+											<td colspan="2">
+												<h3>Applets:</h3>
+											</td>
+										</tr>
+										[%core.string.join({parts: applets, sep: "")%]
+									</table>
+								</text>
+								<where>
+									<def var="applets">
+										<array>
+											<size>state.info.applets#</size>
+											<item index="i">
+												<text>
+													<tr class="analyzer-applet">
+														<td>
+															<span class="analyzer-appletname">[%state.info.applets[i].name%]</span>
+														</td>
+														<td>
+															<div class="[%classname('applet')]" id="[%state.id%]-applet[%i%]"/>
+														</td>
+													</tr>
+												</text>
+											</item>
+										</array>
+									</def>
+								</where>
+							</calc>
+						</def>
+					</any>
+				</where>
+			</calc>
 		</content>
 		<init id="id" content="content">
-			<state><invalid>???</invalid></state>
+			<state>{id: id, none:}</state>
 		</init>
 		<respond>
-			
+			<input name="code"></input>
+			<state>{id: state.id, info: core.code.analyze(code)}</state>
 		</respond>
 		<accept>
 			<from applet="source" data="msg">
@@ -57,8 +136,10 @@
 					msg.code
 					<where>
 						<all>
-							<is>msg.id = substr({str: state.id, start: 0, len: length(msg.id)})</is>
-							<is>substr({str: state.id, start: length(msg.id), len: 4}) = "-lib"</is>
+							<def var="libid">
+								<text>[%msg.id%]-lib</text>
+							</def>
+							<is>state.id = libid</is>
 						</all>
 					</where>
 				</calc>
