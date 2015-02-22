@@ -20,16 +20,44 @@
 		</init>
 		<respond>
 			<input name="input">
-				<string/>
+				<any>
+					<prop name="newcontent">
+						<string/>
+					</prop>
+					<prop name="send"/>
+				</any>
 			</input>
-			<state>{id: id, source: input}</state>
+			<state>
+				<calc>
+					newstate
+					<where>
+						<any>
+							<all>
+								<is>input.send</is>
+								<def var="newstate">state</def>
+							</all>
+							<def var="newstate">{id: id, source: input.newcontent}</def>
+						</any>
+					</where>
+				</calc>
+			</state>
 			<actions>
-				<output>{id: state.id, code: core.xml.parseText(state.source)}</output>
+				<calc>
+					<list>
+						<output>{id: state.id, code: core.xml.parseText(state.source)}</output>
+					</list>
+					<where>
+						<is>input.send</is>
+					</where>
+				</calc>
 			</actions>
 		</respond>
-		<events>
-			<change data="content">content</change>
+		<events data="data">
+			<change>{newcontent: data}</change>
 		</events>
+		<accept>
+			<from applet="action" data="action-id">{send:}</from>
+		</accept>
 	</applet>
 	<applet name="library">
 		<state name="state">
@@ -128,7 +156,12 @@
 		</init>
 		<respond>
 			<input name="code"></input>
-			<state>{id: state.id, info: core.code.analyze(code)}</state>
+			<state>{id: state.id, info: core.code.analyzeLib(code)}</state>
+			<actions>
+				<list>
+					<redraw/>
+				</list>
+			</actions>
 		</respond>
 		<accept>
 			<from applet="source" data="msg">
@@ -145,5 +178,33 @@
 				</calc>
 			</from>
 		</accept>
+	</applet>
+	<applet name="action">
+		<output>
+			<string/>
+		</output>
+		<state name="state">
+			<string/>
+		</state>
+		<content>
+			<invalid>
+				<string/>
+			</invalid>
+		</content>
+		<init id="id" content="text">
+			<state>{id: id}</state>
+		</init>
+		<respond>
+			<input name="do"><prop name="do"/></input>
+			<state>state</state>
+			<actions>
+				<list>
+					<output>state.id</output>
+				</list>
+			</actions>
+		</respond>
+		<events>
+			<click>{do:}</click>
+		</events>
 	</applet>
 </library>

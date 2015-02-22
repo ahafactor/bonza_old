@@ -182,13 +182,12 @@ function loadBonzaLibrary(url) {
 	};
 
 	var resume;
-	var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
-	var frmpat = /\[%(.*?)%\]/g;
 
 	function ExprEngine(actions) {
 
 		function evalFormula(formula, context, output) {
 
+			var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
 			var token = scanner.exec(formula);
 			var valstack = [];
 			var opstack = [];
@@ -589,6 +588,10 @@ function loadBonzaLibrary(url) {
 			var action;
 			var item;
 			var idxname;
+			var arg;
+			var argname;
+			var ret;
+			var frmpat = /\[%(.*?)%\]/g;
 
 			var frmval = function(match, p1) {
 				if (evalFormula(p1, context, output)) {
@@ -681,6 +684,23 @@ function loadBonzaLibrary(url) {
 						}
 					}
 					return evalExpr(where[0], context2, output);
+				case "func":
+					arg = findChild(expr, "arg");
+					argname = arg.getAttribute("name");
+					ret = findChild(expr, "return");
+					for (prop in context) {
+						context2[prop] = context[prop];
+					}
+					output.result = function(x) {
+						var funcout = {};
+						context2[argname] = x;
+						if (evalExpr(ret, context2, funcout)) {
+							return funcout.result;
+						} else {
+							throw "Fail";
+						}
+					};
+					return true;
 				case "wrap":
 					for (prop in context) {
 						context2[prop] = context[prop];
@@ -807,30 +827,184 @@ function loadBonzaLibrary(url) {
 		this.evalStmt = evalStmt;
 	}
 
+	/*
+	 * Analyzer support
+	 */
+
 	function analyzeApplet(code, context) {
-		return {
-			name : "",
-			output : {},
-			state : {},
-			content : {},
-			init : {
-				id : "",
-				content : "",
-				state : {},
-				actions : {}
-			},
-			respond : {
-				input : {
-					name : "",
-					type : {}
-				},
-				state : {},
-				actions : {}
-			},
-			accept : [],
-			events : [],
+		var result = {
 			errors : []
 		};
+		var type;
+		var temp;
+		var temp2;
+		var temp3;
+		var expr;
+		var prop;
+		var local = {
+			vars : context.vars.slice(),
+			types : context.types.slice()
+		};
+
+		try {
+			result.name = code.getAttribute("name");
+		} catch(error) {
+			result.errors.push("Applet name not specified");
+			result.noname = null;
+		}
+
+		temp = findChildren(code, "output");
+		if (temp.length > 1) {
+			result.errors.push("More than one output type");
+			type = {
+				none : null
+			};
+		} else if (temp.length == 1) {
+			type = analyzeType(temp[0].children[0], context);
+		} else {
+			type = {
+				none : null
+			};
+		}
+		result.output = type;
+
+		temp = findChildren(code, "state");
+		if (temp.length > 1) {
+			result.errors.push("More than one state specified");
+			result.nostate = null;
+		} else if (temp.length == 0) {
+			result.errors.push("State not specified");
+			result.nostate = null;
+		} else {
+			try {
+				result.state = analyzeType(temp[0].children[0], context);
+				try {
+					result.statename = temp[0].getAttribute("name");
+					local.vars.push({
+						name : result.statename,
+						type : result.state
+					});
+				} catch(error) {
+					result.nostatename = null;
+				}
+			} catch(error) {
+				result.errors.push("Invalid state definition");
+				result.nostate = null;
+			}
+		}
+
+		temp = findChildren(code, "content");
+		if (temp.length > 1) {
+			result.errors.push("More than one content specified");
+			result.nocontent = null;
+		} else if (temp.length == 0) {
+			result.errors.push("Content not specified");
+			result.nocontent = null;
+		} else {
+			try {
+				result.content = analyzeExpr(temp[0].children[0]);
+			} catch(error) {
+				result.errors.push("Invalid or missing content");
+				result.nocontent = null;
+			}
+		}
+
+		temp = findChildren(code, "init");
+		if (temp.length > 1) {
+			result.errors.push("More than one initialization specified");
+			result.noinit = null;
+		} else if (temp.length == 0) {
+			result.errors.push("Initialization not specified");
+			result.noinit = null;
+		} else {
+			result.init = {};
+		}
+
+		try {
+			local.vars.push({
+				name : temp[0].getAttribute("id"),
+				type : {
+					string : null
+				}
+			});
+		} catch(error) {
+		}
+
+		try {
+			local.vars.push({
+				name : temp[0].getAttribute("content"),
+				type : {
+					string : null
+				}
+			});
+		} catch(error) {
+		}
+
+		temp2 = findChildren(temp[0], "state");
+		if (temp2.length > 1) {
+			result.errors.push("More than one initial state specified");
+			result.init.nostate = null;
+		} else if (temp2.length == 0) {
+			result.errors.push("Initial state not specified");
+			result.init.nostate = null;
+		} else {
+			result.init.state = analyzeExpr(temp2[0], local);
+		}
+
+		if (result.nostate || !covariant(result.init.state, result.state)) {
+			result.errors.push("Initial state does not meet state type");
+		}
+
+		temp2 = findChildren(temp[0], "actions");
+		if (temp2.length > 1) {
+			result.errors.push("More than one initial action list specified");
+			result.init.noactions = null;
+		} else if (temp2.length == 0) {
+			result.errors.push("Initial actions not specified");
+			result.init.noactions = null;
+		} else {
+			result.init.actions = analyzeExpr(temp2[0], local);
+			if (!covariant(result.init.actions, {
+				array : {
+					action : null
+				}
+			})) {
+				result.errors.push("Initial actions must be an array of actions");
+			}
+		}
+
+		temp = findChildren(code, "respond");
+		if (temp.length > 1) {
+			result.errors.push("More than one response specified");
+			result.noinit = null;
+		} else if (temp.length == 0) {
+			result.errors.push("Response not specified");
+			result.noinit = null;
+		} else {
+			try {
+				temp2 = findChildren(temp[0], "input");
+			} catch(error) {
+				temp2 = [];
+			}
+			if (temp2.length > 1) {
+				result.errors.push("More than one input specified");
+				result.noinput = null;
+			} else if (temp2.length == 0) {
+				result.errors.push("Response input not specified");
+				result.noinput = null;
+			} else {
+				result.input = analyzeType(temp2[0]);
+			}
+			local.vars.push({
+				name : temp[0].getAttribute("content"),
+				type : {
+					string : null
+				}
+			});
+		}
+
+		return result;
+
 	}
 
 	function analyzeExpr(code, context) {
@@ -895,22 +1069,131 @@ function loadBonzaLibrary(url) {
 		}
 	}
 
+	function covFunc(type1, type2) {
+		if (type1.hasOwnProperty("func") && type2.hasOwnProperty("func")) {
+			return covariant(type2.func.arg, type1.func.arg) && covariant(type1.func.ret, type2.func.ret);
+		} else {
+			return false;
+		}
+	}
+
+	function covObj(type1, type2) {
+		var i;
+
+		if (type2.hasOwnProperty("prop")) {
+			if (type1.hasOwnProperty("prop")) {
+				return type1.prop.name == type2.prop.name && covariant(type1.prop.type, type2.prop.type);
+			} else if (type1.hasOwnProperty("all")) {
+				for ( i = 0; i < type1.all.length; i++) {
+					if (covariant(type1.all[i], type2)) {
+						return true;
+					}
+				}
+				return false;
+			} else {
+				return false;
+			}
+		} else if (type2.hasOwnProperty("any")) {
+			for ( i = 0; i < type2.any.length; i++) {
+				if (covObj(type1, type2.any[i])) {
+					return true;
+				}
+			}
+			return false;
+		} else if (type2.hasOwnProperty("all")) {
+			for ( i = 0; i < type2.all.length; i++) {
+				if (!covObj(type1, type2.all[i])) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	function covariant(type1, type2) {
 		function both(name) {
 			return type1.hasOwnProperty(name) && type2.hasOwnProperty(name);
 		}
 
-		return both("none") || both("integer") || both("number") || both("string") || both("time") || both("interval") || (both("array") && covariant(type1.children[0], type2.children[0]));
-		//TODO: other types
+		return both("none") || both("integer") || both("number") || both("string") || both("time") || both("interval") || (both("array") && covariant(type1.array, type2.array)) || covObj(type1, type2) || covFunc(type1, type2);
 	}
 
 	function analyzeLib(code) {
-		return {
-			common : [],
-			types : [],
-			applets : [],
-			errors : []
+		var result = {
+			global : {
+				vars : [],
+				types : []
+			},
+			errors : [],
+			applets : []
 		};
+		var type;
+		var temp;
+		var temp2;
+		var expr;
+		var stmt;
+		var applet;
+		var name;
+		var i;
+		var j;
+
+		temp = findChildren(code, "type");
+		for ( i = 0; i < temp[0].children.length; i++) {
+			try {
+				name = temp[0].children[i].getAttribute("name");
+				temp2 = temp[0].children[i].children;
+				if (temp2.length != 1) {
+					result.errors.push("Invalid type definition for " + name);
+				} else {
+					type = analyzeType(temp[0].children[i].children[0], result.global);
+					if (type.errors.length > 0) {
+						result.errors.push("Invalid type definition for " + name);
+					} else {
+						result.global.types.push({
+							name : name,
+							type : type
+						});
+					}
+				}
+			} catch(error) {
+				result.errors.push("Type definition has no name attribute");
+			}
+		}
+
+		temp = findChildren(code, "common");
+		if (temp.length > 1) {
+			result.errors.push("More than one common section specified");
+			result.common = [];
+		} else if (temp.length == 1) {
+			for ( i = 0; i < temp[0].children.length; i++) {
+				stmt = analyzeStmt(temp[0].children[i], result.global);
+				if (stmt.errors.length > 0) {
+					result.errors.push("Common section contains errors");
+					break;
+				} else {
+					for ( j = 0; j < stmt.vars.length; j++) {
+						result.global.vars.push(stmt.vars[j]);
+					}
+				}
+
+			}
+
+		}
+
+		temp = findChildren(code, "applet");
+		for ( i = 0; i < temp[0].children.length; i++) {
+			applet = analyzeApplet(temp[0].children[i], result.global);
+			if (applet.errors.length > 0) {
+				result.errors.push("Invalid applet definition");
+			} else {
+				result.applets.push(applet);
+			}
+		}
+
+		return result;
+
 	}
 
 	function Applet(xml, context, engine) {
@@ -951,6 +1234,7 @@ function loadBonzaLibrary(url) {
 				}
 				break;
 			case "events":
+				this.eventname = temp.getAttribute("data");
 				for ( j = 0; j < temp.children.length; j++) {
 					this.events[temp.children[j].nodeName] = firstExpr(temp.children[j]);
 				}
@@ -995,6 +1279,7 @@ function loadBonzaLibrary(url) {
 				var id = e.currentTarget.getAttribute("id");
 				var instance = applet.instances[id];
 				applet.local[applet.statename] = instance;
+				applet.local[applet.eventname] = e.srcElement.value;
 				if (engine.evalExpr(applet.events.change, applet.local, output)) {
 					//e.stopPropagation();
 					e.preventDefault();
@@ -1056,7 +1341,6 @@ function loadBonzaLibrary(url) {
 				resume();
 				this.input[id] = [];
 				for (var e in this.events) {
-					//jQuery("#" + id).on(e, handlers[e]);
 					element.addEventListener(e, this.handlers[e]);
 				}
 				if (engine.evalExpr(this.initActions, this.local, output)) {
@@ -1135,7 +1419,7 @@ function loadBonzaLibrary(url) {
 		};
 		var lib = this;
 		var code = {
-			analyze : analyzeLib
+			analyzeLib : analyzeLib
 		};
 
 		var actions = {
@@ -1239,6 +1523,7 @@ function loadBonzaLibrary(url) {
 
 		var engine = new ExprEngine(actions);
 		var i;
+		var j;
 
 		var run = function() {
 			var name;
@@ -1277,12 +1562,15 @@ function loadBonzaLibrary(url) {
 		};
 
 		temp = findChildren(xml, "common");
-		for ( i = 0; i < temp.length; i++) {
-			if (!engine.evalStmt(temp.children[i], lib.context, output)) {
-				throw "Fail";
-			}
-			for (prop in output) {
-				this.context[prop] = output[prop];
+		if (temp.length > 0) {
+			temp = temp[0];
+			for ( i = 0; i < temp.children.length; i++) {
+				if (!engine.evalStmt(temp.children[i], lib.context, output)) {
+					throw "Fail";
+				}
+				for (prop in output) {
+					this.context[prop] = output[prop];
+				}
 			}
 		}
 

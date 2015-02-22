@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="description" content="" />
+	<meta name="author" content="Roman Movchan" />
+	<title>Analyzer</title>
+	<script>
+		document.write('<base href="' + document.location + '" />');
+	</script>
+	<link rel="stylesheet" href="analyzer/analyzer.css" />
+	<script src="bonza-loader.js"></script>
+</head>
+
+<body onload="loadBonzaLibrary('analyzer/analyzer.xml')">
+	<h1>Bonza Framework Library Analyzer</h1>
+	<small>&nbsp;Author: Roman Movchan</small>
+	<hr>
+	<form>
+		<textarea class="bonza-source" id="source" cols="100" rows="20"></textarea>
+		<button id="submit" class="bonza-action">Analyze</span>
+	</form>
+	<div id="source-lib" class="bonza-library"></div>
+</body>
+
+</html>

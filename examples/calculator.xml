@@ -391,7 +391,7 @@
 										<output>state.id</output>
 										<delay>
 											<input>{up:}</input>
-											<by>100*time.msec</by>
+											<by>100*core.time.msec</by>
 										</delay>
 									</list>
 								</def>
