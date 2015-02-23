@@ -27,7 +27,6 @@ function loadBonzaLibrary(url) {
 
 	function findChild(node, name) {
 		var i = 0;
-		var result = [];
 		for ( i = 0; i < node.children.length; i++) {
 			if (node.children[i].nodeName === name) {
 				return node.children[i];
@@ -1037,7 +1036,6 @@ function loadBonzaLibrary(url) {
 			try {
 				type = analyzeType(code.children[0]);
 			} catch(error) {
-				errors = type.errors.slice();
 				errors.unshift("Missing array element type");
 				return {
 					errors : errors
@@ -1140,14 +1138,14 @@ function loadBonzaLibrary(url) {
 		var j;
 
 		temp = findChildren(code, "type");
-		for ( i = 0; i < temp[0].children.length; i++) {
+		for ( i = 0; i < temp.length; i++) {
 			try {
-				name = temp[0].children[i].getAttribute("name");
-				temp2 = temp[0].children[i].children;
+				name = temp[i].getAttribute("name");
+				temp2 = temp[i].children;
 				if (temp2.length != 1) {
 					result.errors.push("Invalid type definition for " + name);
 				} else {
-					type = analyzeType(temp[0].children[i].children[0], result.global);
+					type = analyzeType(temp2[0], result.global);
 					if (type.errors.length > 0) {
 						result.errors.push("Invalid type definition for " + name);
 					} else {
@@ -1183,8 +1181,8 @@ function loadBonzaLibrary(url) {
 		}
 
 		temp = findChildren(code, "applet");
-		for ( i = 0; i < temp[0].children.length; i++) {
-			applet = analyzeApplet(temp[0].children[i], result.global);
+		for ( i = 0; i < temp[i]; i++) {
+			applet = analyzeApplet(temp[i], result.global);
 			if (applet.errors.length > 0) {
 				result.errors.push("Invalid applet definition");
 			} else {
@@ -1195,6 +1193,10 @@ function loadBonzaLibrary(url) {
 		return result;
 
 	}
+	
+	/*
+	 * Run-time objects
+	 */
 
 	function Applet(xml, context, engine) {
 		var temp;
@@ -1282,7 +1284,7 @@ function loadBonzaLibrary(url) {
 				applet.local[applet.eventname] = e.srcElement.value;
 				if (engine.evalExpr(applet.events.change, applet.local, output)) {
 					//e.stopPropagation();
-					e.preventDefault();
+					//e.preventDefault();
 					applet.respond(id, output.result);
 				}
 			},

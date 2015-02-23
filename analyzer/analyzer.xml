@@ -36,7 +36,7 @@
 								<is>input.send</is>
 								<def var="newstate">state</def>
 							</all>
-							<def var="newstate">{id: id, source: input.newcontent}</def>
+							<def var="newstate">{id: state.id, source: input.newcontent}</def>
 						</any>
 					</where>
 				</calc>
@@ -67,7 +67,7 @@
 				</prop>
 				<any>
 					<prop name="info">
-						<like>core.code.analyze(core.code.self)</like>
+						<like>core.code.analyzeLib(core.code.self)</like>
 					</prop>
 					<prop name="none"/>
 				</any>
