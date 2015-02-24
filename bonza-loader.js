@@ -1022,38 +1022,196 @@ function loadBonzaLibrary(url) {
 
 	function analyzeType(code, context) {
 		var type;
-		var errors;
+		var errors = 0;
+		var name;
+		var temp;
+		var i;
+		var chidren;
+		var argerrors = [];
+		var reterrors = [];
+		var argtype;
+		var rettype;
+
 		switch(code.nodeName) {
 		case "none":
 			return {
-				none : null
+				none : null,
+				errors : []
 			};
 		case "integer":
 			return {
-				integer : null
+				integer : null,
+				errors : []
 			};
-		case "array":
+		case "string":
+			return {
+				string : null,
+				errors : []
+			};
+		case "time":
+			return {
+				time : null,
+				errors : []
+			};
+		case "interval":
+			return {
+				interval : null,
+				errors : []
+			};
+		case "dynamic":
+			return {
+				dynamic : null,
+				errors : []
+			};
+		case "action":
+			return {
+				action : null,
+				errors : []
+			};
+		case "prop":
 			try {
-				type = analyzeType(code.children[0]);
+				name = code.getAttribute("name");
 			} catch(error) {
-				errors.unshift("Missing array element type");
 				return {
-					errors : errors
+					none : null,
+					errors : ["Missing property name"]
 				};
 			}
-			if (!type.errors) {
-				return {
-					array : type
+			if (code.children.length == 0) {
+				type = {
+					none : null,
+					errors : []
 				};
 			} else {
-				errors = type.errors.slice();
-				errors.unshift("Invalid array element type");
+				type = analyzeType(code.children[0], context);
+			}
+			if (type.errors.length == 0) {
 				return {
-					errors : errors
+					prop : {
+						name : name,
+						type : type
+					},
+					errors : []
+				};
+			} else {
+				return {
+					prop : {
+						name : name,
+						type : type
+					},
+					errors : ["Invalid object property type"]
 				};
 			}
+		case "all":
+			chidren.length = code.children.length;
+			for ( i = 0; i < code.children.length; i++) {
+				type = analyzeType(code.children[i]);
+				chidren[i] = type;
+				if (type.errors.length != 0) {
+					errors++;
+				}
+			}
+			if (errors == 0) {
+				return {
+					all : chidren,
+					errors : []
+				};
+			} else {
+				return {
+					all : chidren,
+					errors : ["Invalid object property type"]
+				};
+			}
+		case "any":
+			chidren.length = code.children.length;
+			for ( i = 0; i < code.children.length; i++) {
+				type = analyzeType(code.children[i], context);
+				chidren[i] = type;
+				if (type.errors.length != 0) {
+					errors++;
+				}
+			}
+			if (errors == 0) {
+				return {
+					any : chidren,
+					errors : []
+				};
+			} else {
+				return {
+					any : chidren,
+					errors : ["Invalid object property type"]
+				};
+			}
+		case "array":
+			try {
+				type = analyzeType(code.children[0], context);
+			} catch(error) {
+				return {
+					none : null,
+					errors : ["Missing array element type"]
+				};
+			}
+			if (type.errors.length == 0) {
+				return {
+					array : type,
+					errors : []
+				};
+			} else {
+				return {
+					array : type,
+					errors : ["Invalid array element type"]
+				};
+			}
+		case "func":
+			children = findChildren(code, "arg");
+			if (chidren.length > 1 || (chidren.length == 1 && children[0].children.length > 1)) {
+				argerrors = ["More than one argument type"];
+				argtype = {
+					none : null,
+					errors : []
+				};
+			} else if (chidren.length == 0 || (chidren.length == 1 && children[0].children.length == 0)) {
+				argerrors = ["Missing argument type"];
+				argtype = {
+					none : null,
+					errors : []
+				};
+			} else {
+				argtype = analyzeType(chidren[0].children[0], context);
+			}
+			children = findChildren(code, "return");
+			if (chidren.length > 1 || (chidren.length == 1 && children[0].children.length > 1)) {
+				reterrors = ["More than one return type"];
+				rettype = {
+					none : null,
+					errors : []
+				};
+			} else if (chidren.length == 0 || (chidren.length == 1 && children[0].children.length == 0)) {
+				reterrors = ["Missing return type"];
+				rettype = {
+					none : null,
+					errors : []
+				};
+			} else {
+				rettype = analyzeType(chidren[0].children[0], context);
+			}
+			temp = [];
+			if (argerrors.length > 0) {
+				temp.push(argerrors[0]);
+			}
+			if (reterrors.length > 0) {
+				temp.push(reterrors[0]);
+			}
+			return {
+				func : {
+					arg : argtype,
+					ret : rettype,
+					errors : temp
+				}
+			};
 		default:
 			return {
+				none : null,
 				errors : ["Unknown data type: " + code.nodeName]
 			};
 		}
@@ -1193,7 +1351,7 @@ function loadBonzaLibrary(url) {
 		return result;
 
 	}
-	
+
 	/*
 	 * Run-time objects
 	 */
