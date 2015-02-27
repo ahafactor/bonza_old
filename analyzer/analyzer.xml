@@ -83,6 +83,7 @@
 		<content>
 			<calc>
 				<text>
+					<h3>Errors:</h3>
 					<ul class="error-list">[%core.string.join({parts: errors, sep: ""})%]</ul>
 					<h3>Types:</h3>
 					[%core.string.join({parts: types, sep: ""})%]

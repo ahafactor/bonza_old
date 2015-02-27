@@ -1081,6 +1081,12 @@ function loadBonzaLibrary(url) {
 		var expr;
 		var children;
 		var name;
+		var i;
+		var j;
+		var dict;
+		var context2 = {};
+		var prop;
+		var vars;
 
 		switch(stmt.nodeName) {
 		case "is":
@@ -1094,6 +1100,7 @@ function loadBonzaLibrary(url) {
 				if (expr.errors.length != 0) {
 					result.errors.push("Invalid expression");
 				}
+				result.is = expr;
 			}
 			break;
 		case "not":
@@ -1103,10 +1110,11 @@ function loadBonzaLibrary(url) {
 			} else if (children.length > 1) {
 				result.errors.push("More than one statement specified");
 			} else {
-				expr = analyzeExpr(firstExpr(stmt), context);
+				expr = analyzeStmt(stmt.children[0], context);
 				if (expr.errors.length != 0) {
 					result.errors.push("Invalid statement");
 				}
+				result.not = expr;
 			}
 			break;
 		case "def":
@@ -1126,12 +1134,24 @@ function loadBonzaLibrary(url) {
 						result.errors.push("Invalid expression");
 					}
 					result.vars[0].type = expr.type;
+					result.def = expr;
 				}
 			} catch(error) {
 				result.errors.push("Missing variable");
 			}
 			break;
 		case "all":
+			children = getChildren(stmt);
+			for(j = 0; j < context.types.length; j++){
+				context2.types.push(context.types[j]);
+			}
+			for(j = 0; j < context.vars.length; j++){
+				vars[context.vars[j].name] = context.vars[j].type;
+				context2.vars.push(context.vars[j]);
+			}
+			for ( i = 0; i < children.length; i++) {
+				expr = analyzeStmt(children[i], context2);
+			}
 			break;
 		case "any":
 			break;
@@ -1139,6 +1159,7 @@ function loadBonzaLibrary(url) {
 			break;
 		default:
 			result.errors.push("Unknown statement: " + stmt.nodeName);
+			result.other = null;
 			break;
 		}
 
@@ -1240,7 +1261,7 @@ function loadBonzaLibrary(url) {
 		case "all":
 			chidren.length = code.children.length;
 			for ( i = 0; i < code.children.length; i++) {
-				type = analyzeType(code.children[i]);
+				type = analyzeType(code.children[i], context);
 				chidren[i] = type;
 				if (type.errors.length != 0) {
 					errors++;
