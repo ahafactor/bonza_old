@@ -1,31 +1,12 @@
-.button-up {
-	font-size: 1.2em;
-	border: 1px solid;
-	border-radius: 6px;
-	border-style: outset;
-	cursor: pointer;
-	color: black;
-	background-color: MintCream;
-	margin: 5px;
-	text-align: center;
-	font-family: "Arial";
-	padding-left: 20px;
-	padding-right: 20px;
-	padding-top: 5px;
-	padding-bottom: 5px;
+.applet-info {
 }
-.button-down {
+.applet-name {
 	font-size: 1.2em;
-	border: 1px solid;
-	border-radius: 6px;
-	cursor: pointer;
 	color: black;
-	background-color: MintCream;
-	margin: 5px;
-	text-align: center;
-	font-family: "Arial";
-	padding-left: 21px;
-	padding-right: 19px;
-	padding-top: 6px;
-	padding-bottom: 4px;
+}
+.more-icon {
+	cursor: pointer;
+}
+.error-list {
+	color: red;
 }

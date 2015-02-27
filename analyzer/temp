@@ -1,0 +1,44 @@
+			<calc>
+				content
+				<where>
+					<any>
+						<all>
+							<is>state.info.errors</is>
+							<def var="content">
+								<calc>
+									<text>
+										<table class="analyzer-library">
+											<tr class="analyzer-header">
+												<td colspan="2">
+													<h3>Library contains errors:</h3>
+												</td>
+											</tr>
+											[%core.string.join({parts: errors, sep: "")%]
+										</table>
+									</text>
+									<where>
+										<def var="errors">
+											<array>
+												<size>state.info.errors#</size>
+												<item index="i">
+													<text>
+														<tr>
+															<td>
+																<span class="glyphicon halflings-alert"></span>
+															</td>
+															<td>
+																<span class="analyzer-errortext">[%state.info.errors[i]%]</span>
+															</td>
+														</tr>
+													</text>
+												</item>
+											</array>
+										</def>
+									</where>
+								</calc>
+							</def>
+						</all>
+					</any>
+				</where>
+			</calc>
+						

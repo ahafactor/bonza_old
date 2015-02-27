@@ -18,17 +18,15 @@
 		</any>
 	</type>
 	<common>
-		<all>
-			<unwrap>core</unwrap>
-			<unwrap>string</unwrap>
-			<unwrap>format</unwrap>
-			<unwrap>math</unwrap>
-			<def var="maxlen">19</def>
-		</all>
+		<unwrap>core</unwrap>
+		<unwrap>string</unwrap>
+		<unwrap>format</unwrap>
+		<unwrap>math</unwrap>
+		<def var="maxlen">19</def>
 	</common>
 	<applet name="calculator">
 		<output>
-			<string/>
+			<type name="Command"/>
 		</output>
 		<state name="state">
 			<all>
