@@ -188,10 +188,7 @@ function loadBonzaLibrary(url) {
 
 			var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
 			var token = scanner.exec(formula);
-			var valstack = [];
-			var opstack = [];
 			var result;
-			var more;
 			var level = 0;
 			function parseFormula() {
 				if (parseSubexp()) {
@@ -1066,12 +1063,643 @@ function loadBonzaLibrary(url) {
 
 	}
 
-	function analyzeExpr(code, context) {
-		return {
-			type : {},
-			errors : []
+	function analyzeFormula(formula, context, output) {
+
+		var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
+		var token = scanner.exec(formula);
+		var result = {
+			none : null
 		};
-	}
+		var level = 0;
+		function parseFormula() {
+			if (token === null) {
+				return result;
+			} else {
+
+				if (parseSubexp()) {
+					if (parseSize()) {
+					}
+					if (parseMult() || parseDiv()) {
+					}
+					if (parsePlus() || parseMinus()) {
+					}
+					if (parseEqual() || parseLess() || parseMore()) {
+					}
+					return true;
+				} else if (parseString()) {
+					return true;
+				} else if (parseNumber()) {
+					if (parseMult() || parseDiv()) {
+					}
+					if (parsePlus() || parseMinus()) {
+					}
+					if (parseEqual() || parseLess() || parseMore()) {
+					}
+					return true;
+				} else if (parseObject()) {
+					return true;
+				} else if (parseVar()) {
+					while (parseApply() || parseIndex() || parseDot()) {
+					}
+					if (parseSize()) {
+					}
+					if (parseMult() || parseDiv()) {
+					}
+					if (parsePlus() || parseMinus()) {
+					}
+					if (parseEqual() || parseLess() || parseMore()) {
+					}
+					return true;
+				} else {
+					return false;
+				}
+			}
+		}
+
+		function parseSubexp() {
+			if (token !== null && token[0] === "(") {
+				level++;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					if (token === null || token[0] !== ")") {
+						throw "Fail";
+					}
+					token = scanner.exec(formula);
+				} else {
+					throw "Fail";
+				}
+				level--;
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseObject() {
+			if (token !== null && token[0] === "{") {
+				var obj = { };
+				var prop;
+				level++;
+				token = scanner.exec(formula);
+				if (parseProp()) {
+					if (token === null || token[0] !== ":") {
+						throw "Fail";
+					}
+					prop = result;
+					token = scanner.exec(formula);
+					if (token !== null && (token[0] === "," || token[0] === "}")) {
+						obj[prop] = null;
+					} else if (parseFormula()) {
+						obj[prop] = result;
+					} else {
+						throw "Fail";
+					}
+					while (token !== null && token[0] === ",") {
+						token = scanner.exec(formula);
+						if (parseProp()) {
+							if (token === null || token[0] !== ":") {
+								throw "Fail";
+							}
+							prop = result;
+							token = scanner.exec(formula);
+							if (token !== null && (token[0] === "," || token[0] === "}")) {
+								obj[prop] = null;
+							} else if (parseFormula()) {
+								obj[prop] = result;
+							} else {
+								throw "Fail";
+							}
+						} else {
+							throw "Fail";
+						}
+					}
+				}
+				if (token === null || token[0] !== "}") {
+					throw "Fail";
+				}
+				token = scanner.exec(formula);
+				level--;
+				result = obj;
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseApply() {
+			var prev;
+			var args = [];
+			if (token !== null && token[0] === "(") {
+				level++;
+				prev = result;
+				token = scanner.exec(formula);
+				if (token !== null && token[0] !== ")") {
+					if (parseFormula()) {
+						args[args.length] = result;
+						//token = scanner.exec(formula);
+						while (token !== null && token[0] === ",") {
+							token = scanner.exec(formula);
+							if (parseFormula()) {
+								args[args.length] = result;
+								//token = scanner.exec(formula);
+							} else {
+								throw "Fail";
+							}
+						}
+					} else {
+						throw "Fail";
+					}
+				}
+				if (args.length == 0) {
+					result = prev();
+				} else if (args.length == 1) {
+					result = prev(args[0]);
+				} else if (args.length == 2) {
+					result = prev(args[0], args[1]);
+				} else if (args.length == 3) {
+					result = prev(args[0], args[1], args[2]);
+				} else {
+					throw "Fail";
+				}
+				if (token === null || token[0] !== ")") {
+					throw "Fail";
+				}
+				token = scanner.exec(formula);
+				level--;
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseSize() {
+			var prev;
+			var args = [];
+			if (token !== null && token[0] === "#") {
+				prev = result;
+				result = prev.length;
+				token = scanner.exec(formula);
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseIndex() {
+			var prev;
+			var args = [];
+			if (token !== null && token[0] === "[") {
+				level++;
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result = prev[result];
+				} else {
+					throw "Fail";
+				}
+				if (token === null || token[0] !== "]") {
+					throw "Fail";
+				}
+				token = scanner.exec(formula);
+				level--;
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseDot() {
+			var prev;
+			if (token !== null && token[0] === ".") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseProp()) {
+					if (prev.hasOwnProperty(result)) {
+						result = prev[result];
+					} else {
+						throw "Fail";
+					}
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parsePlus() {
+			var prev;
+			if (token !== null && token[0] === "+") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result += prev;
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseMinus() {
+			var prev;
+			if (token !== null && token[0] === "-") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result = prev - result;
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseMult() {
+			var prev;
+			if (token !== null && token[0] === "*") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result *= prev;
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseDiv() {
+			var prev;
+			if (token !== null && token[0] === "/") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result = prev / result;
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseLess() {
+			var prev;
+			if (token !== null && token[0] === "<") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result = prev < result;
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseMore() {
+			var prev;
+			if (token !== null && token[0] === ">") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result = prev > result;
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseEqual() {
+			var prev;
+			if (token !== null && token[0] === "=") {
+				prev = result;
+				token = scanner.exec(formula);
+				if (parseFormula()) {
+					result = prev === result;
+				} else {
+					throw "Fail";
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseProp() {
+			if (token !== null && token[0] === token[3]) {
+				result = token[0];
+				token = scanner.exec(formula);
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseVar() {
+			if (token !== null && token[0] === token[3]) {
+				result = context[token[0]];
+				token = scanner.exec(formula);
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseNumber() {
+			if (token !== null && (token[0] === token[1] || token[0] === token[2])) {
+				result = Number(token[0]);
+				token = scanner.exec(formula);
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		function parseString() {
+			if (token !== null && (token[0] === token[4] || token[0] === token[5])) {
+				result = token[0].substr(1, token[0].length - 2);
+				token = scanner.exec(formula);
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		try {
+			return {
+				type : parseFormula(),
+				errors : []
+			};
+		} catch(error) {
+			return {
+				type : {
+					none : null
+				},
+				errors : [error]
+			};
+		}
+
+	};
+
+	function analyzeExpr(expr, context) {
+		var stmt;
+		var where;
+		var i;
+		var result = { };
+		var context2 = { };
+		var output2 = { };
+		var prop;
+		var array = [];
+		var array2 = [];
+		var parser;
+		var xmlDoc;
+		var temp;
+		var action;
+		var item;
+		var idxname;
+		var arg;
+		var argname;
+		var ret;
+		var frmpat = /\[%(.*?)%\]/g;
+
+		var frmval = function(match, p1) {
+			if (analyzeFormula(p1, context)) {
+				return output.result;
+			}
+		};
+
+		try {
+			if (expr.nodeType == 3) {
+				return analyzeFormula(expr.nodeValue.trim(), context);
+			}
+			switch(expr.nodeName) {
+			case "invalid":
+				output.result = undefined;
+				return false;
+			case "text":
+				temp = expr.innerHTML;
+				output.result = temp.replace(frmpat, frmval);
+				break;
+			case "eval":
+				if (evalExpr(firstExpr(expr), context, result)) {
+					if (window.DOMParser) {
+						parser = new DOMParser();
+						xmlDoc = parser.parseFromString(result.result, "text/xml");
+					} else {
+						xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
+						xmlDoc.async = false;
+						xmlDoc.loadXML(result.result);
+					}
+					return evalExpr(xmlDoc.children[0], context, output);
+				} else {
+					output.result = undefined;
+					return false;
+				}
+				break;
+			case "list":
+				temp = getChildren(expr);
+				array.length = temp.length;
+				for ( i = 0; i < array.length; i++) {
+					if (evalExpr(temp[i], context, result)) {
+						array[i] = result.result;
+					} else {
+						output.result = undefined;
+						return false;
+					}
+				}
+				output.result = array;
+				break;
+			case "array":
+				temp = firstExpr(findChild(expr, "size"));
+				if (evalExpr(temp, context, result)) {
+					array.length = result.result;
+					item = findChild(expr, "item");
+					idxname = item.getAttribute("index");
+					for (prop in context) {
+						context2[prop] = context[prop];
+					}
+					for ( i = 0; i < array.length; i++) {
+						context2[idxname] = i;
+						if (evalExpr(firstExpr(item), context2, result)) {
+							array[i] = result.result;
+						} else {
+							output.result = undefined;
+							return false;
+						}
+					}
+				} else {
+					output.result = undefined;
+					return false;
+				}
+				output.result = array;
+				break;
+			case "no":
+				output.result = [];
+				break;
+			case "calc":
+				where = getChildren(expr);
+				for (prop in context) {
+					context2[prop] = context[prop];
+				}
+				for ( i = where.length - 1; i > 0; i--) {
+					stmt = where[i].children[0];
+					if (evalStmt(stmt, context2, result)) {
+						for (prop in result) {
+							context2[prop] = result[prop];
+						}
+					} else {
+						output.result = undefined;
+						return false;
+					}
+				}
+				return evalExpr(where[0], context2, output);
+			case "func":
+				arg = findChild(expr, "arg");
+				argname = arg.getAttribute("name");
+				ret = findChild(expr, "return");
+				for (prop in context) {
+					context2[prop] = context[prop];
+				}
+				output.result = function(x) {
+					var funcout = {};
+					context2[argname] = x;
+					if (evalExpr(ret, context2, funcout)) {
+						return funcout.result;
+					} else {
+						throw "Fail";
+					}
+				};
+				break;
+			case "wrap":
+				for (prop in context) {
+					context2[prop] = context[prop];
+				}
+				for ( i = 0; i < stmt.childNodes.length; i++) {
+					if (stmt.childNodes[i].nodeType != 3) {
+						if (evalStmt(stmt.childNodes[i], context2, result)) {
+							for (prop in result) {
+								context2[prop] = result[prop];
+								output2[prop] = result[prop];
+							}
+							result = { };
+						} else {
+							return false;
+						}
+					}
+				}
+				output.result = output2;
+				break;
+			case "find":
+				temp = firstExpr(findChild(expr, "in"));
+				if (evalExpr(temp, context, output)) {
+					array = output.result;
+					temp = findChild(expr, "item");
+					argname = temp.getAttribute("name");
+					for (prop in context) {
+						context2[prop] = context[prop];
+					}
+					for ( i = 0; i < array.length; i++) {
+						context2[argname] = array[i];
+						if (evalStmt(temp.children[0], context2, output2)) {
+							output.result = array[i];
+							return true;
+						}
+					}
+					return false;
+				}
+				return false;
+			case "select":
+				temp = firstExpr(findChild(expr, "in"));
+				if (evalExpr(temp, context, output)) {
+					array = output.result;
+					temp = findChild(expr, "item");
+					argname = temp.getAttribute("name");
+					for (prop in context) {
+						context2[prop] = context[prop];
+					}
+					for ( i = 0; i < array.length; i++) {
+						context2[argname] = array[i];
+						if (evalStmt(temp.children[0], context2, output2)) {
+							array2.push(array[i]);
+						}
+					}
+					output.result = array2;
+					return true;
+				}
+				return false;
+			case "count":
+				temp = firstExpr(findChild(expr, "in"));
+				if (evalExpr(temp, context, output)) {
+					array = output.result;
+					temp = findChild(expr, "item");
+					argname = temp.getAttribute("name");
+					for (prop in context) {
+						context2[prop] = context[prop];
+					}
+					var count = 0;
+					for ( i = 0; i < array.length; i++) {
+						context2[argname] = array[i];
+						if (evalStmt(temp.children[0], context2, output2)) {
+							count++;
+						}
+					}
+					output.result = count;
+					return true;
+				}
+				return false;
+			case "redraw":
+				output.result = actions.redraw();
+				break;
+			case "delay":
+				temp = getChildren(expr);
+				if (evalExpr(temp[0], context, result)) {
+					action = result.result;
+					if (evalExpr(firstExpr(temp[1]), context, result)) {
+						output.result = actions.delay(action, result.result);
+					} else {
+						return false;
+					}
+				} else {
+					return false;
+				}
+				break;
+			case "input":
+				if (evalExpr(firstExpr(expr), context, result)) {
+					output.result = actions.input(result.result);
+				} else {
+					return false;
+				}
+				break;
+			case "output":
+				if (evalExpr(firstExpr(expr), context, result)) {
+					output.result = actions.output(result.result);
+				} else {
+					return false;
+				}
+				break;
+			default:
+				return false;
+			}
+			return true;
+		} catch(error) {
+			return false;
+		}
+	};
 
 	function analyzeStmt(stmt, context) {
 		var result = {
@@ -1083,10 +1711,9 @@ function loadBonzaLibrary(url) {
 		var name;
 		var i;
 		var j;
-		var dict;
 		var context2 = {};
 		var prop;
-		var vars;
+		var vars = {};
 
 		switch(stmt.nodeName) {
 		case "is":
@@ -1142,18 +1769,69 @@ function loadBonzaLibrary(url) {
 			break;
 		case "all":
 			children = getChildren(stmt);
-			for(j = 0; j < context.types.length; j++){
+			for ( j = 0; j < context.types.length; j++) {
 				context2.types.push(context.types[j]);
 			}
-			for(j = 0; j < context.vars.length; j++){
+			for ( j = 0; j < context.vars.length; j++) {
 				vars[context.vars[j].name] = context.vars[j].type;
 				context2.vars.push(context.vars[j]);
 			}
+			result.all = [];
 			for ( i = 0; i < children.length; i++) {
 				expr = analyzeStmt(children[i], context2);
+				for ( j = 0; j < expr.vars.length; j++) {
+					if (vars.hasOwnProperty(expr.vars[j].name)) {
+						result.errors.push("Variable redefined: " + expr.vars[j].name);
+					} else {
+						vars[expr.vars[j].name] = expr.vars[j].type;
+						context2.vars.push(context.vars[j]);
+					}
+				}
+				result.all.push(expr);
 			}
+			result.vars = context2.vars;
 			break;
 		case "any":
+			children = getChildren(stmt);
+			for ( j = 0; j < context.types.length; j++) {
+				context2.types.push(context.types[j]);
+			}
+			for ( j = 0; j < context.vars.length; j++) {
+				vars[context.vars[j].name] = context.vars[j].type;
+				context2.vars.push(context.vars[j]);
+			}
+			result.any = [];
+			if (children.length > 0) {
+				expr = analyzeStmt(children[0], context2);
+				for ( j = 0; j < expr.vars.length; j++) {
+					vars[expr.vars[j].name] = {
+						type : expr.vars[j].type,
+						count : 0
+					};
+				}
+				for ( i = 1; i < children.length; i++) {
+					expr = analyzeStmt(children[i], context2);
+					for ( j = 0; j < expr.vars.length; j++) {
+						vars[expr.vars[j].name].count++;
+						if (vars.hasOwnProperty(expr.vars[j].name)) {
+							if (isObjType(expr.vars[j].type)) {
+								vars[expr.vars[j].name] = combine(expr.vars[j].type, vars[expr.vars[j].name]);
+							} else {
+								result.errors.push("Incompatible types for " + expr.vars[j].name);
+							}
+						}
+					}
+					result.any.push(expr);
+				}
+				for (prop in vars) {
+					if (vars[prop].count == children.length) {
+						result.vars.push({
+							name : prop,
+							type : vars[prop].type
+						});
+					}
+				}
+			}
 			break;
 		case "unwrap":
 			break;
@@ -1164,6 +1842,35 @@ function loadBonzaLibrary(url) {
 		}
 
 		return result;
+	}
+
+	function isObjType(type) {
+		return type.hasOwnProperty("prop") || type.hasOwnProperty("all") || type.hasOwnProperty("any");
+	}
+
+	function combine(type1, type2) {
+		var result = {
+			errors : []
+		};
+		if (type1.hasOwnProperty("prop")) {
+
+			if (type2.hasOwnProperty("prop")) {
+				if (type1.prop.name == type2.prop.name) {
+					if (covariant(type1.prop.type, type2.prop.type) && covariant(type2.prop.type, type1.prop.type)) {
+						result.prop = type1.prop;
+					} else {
+						result.none = null;
+						result.errors.push("Incompatible property types");
+					}
+				} else {
+					result.any = [type1, type2];
+				}
+			} else {
+				result.errors.push("Only single-property types can be combined into variants");
+			}
+		} else {
+			result.errors.push("Only single-property types can be combined into variants");
+		}
 	}
 
 	function analyzeType(code, context) {
@@ -1179,7 +1886,6 @@ function loadBonzaLibrary(url) {
 		var rettype;
 		var prop;
 		var result = {
-			type : {},
 			errors : []
 		};
 
@@ -1262,6 +1968,9 @@ function loadBonzaLibrary(url) {
 			chidren.length = code.children.length;
 			for ( i = 0; i < code.children.length; i++) {
 				type = analyzeType(code.children[i], context);
+				if (!isObjType(type)) {
+					errors++;
+				}
 				chidren[i] = type;
 				if (type.errors.length != 0) {
 					errors++;
@@ -1282,6 +1991,9 @@ function loadBonzaLibrary(url) {
 			chidren.length = code.children.length;
 			for ( i = 0; i < code.children.length; i++) {
 				type = analyzeType(code.children[i], context);
+				if (!isObjType(type)) {
+					errors++;
+				}
 				chidren[i] = type;
 				if (type.errors.length != 0) {
 					errors++;
