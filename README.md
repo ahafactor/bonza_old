@@ -1,2 +1,0 @@
-# bonza
-Bonza Framework
