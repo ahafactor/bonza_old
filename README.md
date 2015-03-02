@@ -15,3 +15,5 @@ Every applet definition has a well-defined structure, consisting of the followin
 Applets in a library can communicate by broadcasting messages (output) and subscribing to other applets' output.
 
 The Bonza language has an advanced static type system that distinguishes integers, floats, date/time, intervals, strings, arrays, objects, actions, functions and dynamic data. User-defined types can also be created.
+
+We have created a few examples of using Bonza. The simplest is [Calculator Demo](examples/calculator.html).
