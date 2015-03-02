@@ -10,3 +10,6 @@
 .error-list {
 	color: red;
 }
+textarea {
+	tab-size: 4;
+}

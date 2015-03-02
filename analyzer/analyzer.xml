@@ -1,5 +1,53 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <library>
+	<common>
+		<def var="errors">
+			<!-- function that returns HTML for a list of errors -->
+			<func>
+				<arg name="list">
+					<array>
+						<string/>
+					</array>
+				</arg>
+				<return>
+					<calc>
+						errors
+						<where>
+							<any>
+								<all>
+									<is>list# = 0</is>
+									<def var="errors">
+										<text>
+											<p>no errors found</p>
+										</text>
+									</def>
+								</all>
+								<def var="errors">
+									<calc>
+										<text>
+											<ul class="error-list">[%core.string.join({parts: errList, sep: ""})%]</ul>
+										</text>
+										<where>
+											<def var="errList">
+												<array>
+													<size>state.info.errors#</size>
+													<item index="i">
+														<text>
+															<li>[%list[i]%]</li>
+														</text>
+													</item>
+												</array>
+											</def>
+										</where>
+									</calc>
+								</def>
+							</any>
+						</where>
+					</calc>
+				</return>
+			</func>
+		</def>
+	</common>
 	<applet name="source">
 		<output>
 			<like>{id: "", code: core.xml.parseText("")}</like>
@@ -236,54 +284,28 @@
 							<is>state.info</is>
 							<is>state.expanded</is>
 							<def var="content">
-								<calc>
-									<text>
-										<div class="applet-info">
-											<span class="applet-name">[%core.nbsp%][%state.name%][%core.nbsp%]</span>
-											[%errors%]
-											<ul>
-												<li>output: [%core.code.typeStr(state.info.output)%][%core.nbsp%]</li>
-												<li>state([%state.info.statename%]): [%core.code.typeStr(state.info.state)%][%core.nbsp%]</li>
-											</ul>
-										</div>
-									</text>
-									<where>
-										<any>
-											<all>
-												<is>state.info.errors# = 0</is>
-												<def var="errors">""</def>
-											</all>
-											<def var="errors">
-												<calc>
-													<text>
-														<ul class="error-list">[%core.string.join({parts: errList, sep: ""})%]</ul>
-													</text>
-													<where>
-														<def var="errList">
-															<array>
-																<size>state.info.errors#</size>
-																<item index="i">
-																	<text>
-																		<li>[%state.info.errors[i]%]</li>
-																	</text>
-																</item>
-															</array>
-														</def>
-													</where>
-												</calc>
-											</def>
-										</any>
-									</where>
-								</calc>
+								<text>
+									<div class="applet-info">
+										<span class="more-icon">
+											<image src="double-arrow-up.png"/>
+										</span>
+										<span class="applet-name">[%core.nbsp%][%state.name%][%core.nbsp%]</span>
+										[%errors(state.info.errors)%]
+										<ul>
+											<li>output: [%core.code.typeStr(state.info.output)%][%core.nbsp%]</li>
+											<li>state([%state.info.statename%]): [%core.code.typeStr(state.info.state)%][%core.nbsp%]</li>
+										</ul>
+									</div>
+								</text>
 							</def>
 						</all>
 						<def var="content">
 							<text>
 								<div class="applet-info">
-									<span class="applet-name">[%core.nbsp%][%state.name%][%core.nbsp%]</span>
 									<span class="more-icon">
-										<image src="more.gif"/>
+										<image src="double-arrow-down.png"/>
 									</span>
+									<span class="applet-name">[%core.nbsp%][%state.name%][%core.nbsp%]</span>
 								</div>
 							</text>
 						</def>
@@ -292,7 +314,7 @@
 			</calc>
 		</content>
 		<init id="id" content="text">
-			<state>{name: text, noinfo:, collapsed:}</state>
+			<state>{name: core.string.trim(text), noinfo:, collapsed:}</state>
 			<actions>
 				<list>
 					<output>state.name</output>
@@ -302,7 +324,7 @@
 		<respond>
 			<input name="input">
 				<any>
-					<prop name="expand"/>
+					<prop name="toggle"/>
 					<prop name="info">
 						<type name ="AppletInfo"/>
 					</prop>
@@ -314,8 +336,14 @@
 					<where>
 						<any>
 							<all>
-								<is>input.expand</is>
+								<is>input.toggle</is>
+								<is>state.collapsed</is>
 								<def var="newstate">{name: state.name, info: state.info, expanded:}</def>
+							</all>
+							<all>
+								<is>input.toggle</is>
+								<is>state.expanded</is>
+								<def var="newstate">{name: state.name, info: state.info, collapsed:}</def>
 							</all>
 							<def var="newstate">{name: state.name, info: input.info, collapsed:}</def>
 						</any>
@@ -333,13 +361,13 @@
 				<calc>
 					{info: data.info}
 					<where>
-						<is>data.name = state.name</is>
+						<is>data.name `eq` state.name</is>
 					</where>
 				</calc>
 			</from>
 		</accept>
 		<events>
-			<click>{expand:}</click>
+			<click>{toggle:}</click>
 		</events>
 	</applet>
 	<applet name="action">

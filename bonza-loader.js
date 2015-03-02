@@ -10,7 +10,7 @@ function loadBonzaLibrary(url) {
 		var i = 0;
 		var result = [];
 		for ( i = 0; i < node.childNodes.length; i++) {
-			if (node.childNodes[i].nodeType != 3 || node.childNodes[i].nodeValue.trim() != "") {
+			if (node.childNodes[i].nodeType != 8 && (node.childNodes[i].nodeType != 3 || node.childNodes[i].nodeValue.trim() != "")) {
 				result.push(node.childNodes[i]);
 			}
 		}
@@ -19,7 +19,7 @@ function loadBonzaLibrary(url) {
 
 	function firstExpr(node) {
 		var first = 0;
-		while (node.childNodes[first].nodeType == 3 && node.childNodes[first].nodeValue.trim() == "") {
+		while (node.childNodes[first].nodeType == 8 || (node.childNodes[first].nodeType == 3 && node.childNodes[first].nodeValue.trim() == "")) {
 			first++;
 		}
 		return node.childNodes[first];
@@ -641,7 +641,7 @@ function loadBonzaLibrary(url) {
 					output.result = undefined;
 					return false;
 				case "text":
-					temp = expr.innerHTML;
+					temp = expr.innerHTML.trim();
 					output.result = temp.replace(frmpat, frmval);
 					break;
 				case "eval":
@@ -720,7 +720,7 @@ function loadBonzaLibrary(url) {
 				case "func":
 					arg = findChild(expr, "arg");
 					argname = arg.getAttribute("name");
-					ret = findChild(expr, "return");
+					ret = firstExpr(findChild(expr, "return"));
 					for (prop in context) {
 						context2[prop] = context[prop];
 					}
