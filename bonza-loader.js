@@ -186,7 +186,7 @@ function loadBonzaLibrary(url) {
 
 		function evalFormula(formula, context, output) {
 
-			var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
+			var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(`..`)|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
 			var token = scanner.exec(formula);
 			var result;
 			var level = 0;
@@ -198,7 +198,7 @@ function loadBonzaLibrary(url) {
 					}
 					if (parsePlus() || parseMinus()) {
 					}
-					if (parseEqual() || parseLess() || parseMore()) {
+					if (parseRelation() || parseEqual()) {
 					}
 					return true;
 				} else if (parseString()) {
@@ -208,7 +208,7 @@ function loadBonzaLibrary(url) {
 					}
 					if (parsePlus() || parseMinus()) {
 					}
-					if (parseEqual() || parseLess() || parseMore()) {
+					if (parseRelation() || parseEqual()) {
 					}
 					return true;
 				} else if (parseObject()) {
@@ -222,7 +222,7 @@ function loadBonzaLibrary(url) {
 					}
 					if (parsePlus() || parseMinus()) {
 					}
-					if (parseEqual() || parseLess() || parseMore()) {
+					if (parseRelation() || parseEqual()) {
 					}
 					return true;
 				} else {
@@ -328,10 +328,6 @@ function loadBonzaLibrary(url) {
 						result = prev();
 					} else if (args.length == 1) {
 						result = prev(args[0]);
-					} else if (args.length == 2) {
-						result = prev(args[0], args[1]);
-					} else if (args.length == 3) {
-						result = prev(args[0], args[1], args[2]);
 					} else {
 						throw "Fail";
 					}
@@ -459,6 +455,46 @@ function loadBonzaLibrary(url) {
 						result = prev / result;
 					} else {
 						throw "Fail";
+					}
+					return true;
+				} else {
+					return false;
+				}
+			}
+
+			function parseRelation() {
+				var prev;
+				var rel;
+
+				if (token !== null && token[0] === token[6]) {
+					prev = result;
+					rel = token[0];
+					token = scanner.exec(formula);
+					if (parseFormula()) {
+						switch(rel) {
+						case "`le`":
+							result = prev <= result;
+							break;
+						case "`lt`":
+							result = prev < result;
+							break;
+						case "`eq`":
+							result = prev == result;
+							break;
+						case "`ne`":
+							result = prev != result;
+							break;
+						case "`gt`":
+							result = prev > result;
+							break;
+						case "`ge`":
+							result = prev >= result;
+							break;
+						default:
+							throw "Invalid relation: " + token[0];
+						}
+					} else {
+						throw "Parse error";
 					}
 					return true;
 				} else {
@@ -1063,56 +1099,51 @@ function loadBonzaLibrary(url) {
 
 	}
 
-	function analyzeFormula(formula, context, output) {
+	function analyzeFormula(formula, context) {
 
-		var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
+		var scanner = /\s*(-?\d*\.\d+)|(-?\d+)|(\w+)|(\".*\")|('.*')|(`..`)|(#)|(\+)|(-)|(\*)|(\/)|(\.)|(\()|(\))|(\[)|(\])|(\{)|(\})|(:)|(,)|(<=?)|(\/?=)|(>=?)/g;
 		var token = scanner.exec(formula);
 		var result = {
 			none : null
 		};
 		var level = 0;
 		function parseFormula() {
-			if (token === null) {
-				return result;
-			} else {
-
-				if (parseSubexp()) {
-					if (parseSize()) {
-					}
-					if (parseMult() || parseDiv()) {
-					}
-					if (parsePlus() || parseMinus()) {
-					}
-					if (parseEqual() || parseLess() || parseMore()) {
-					}
-					return true;
-				} else if (parseString()) {
-					return true;
-				} else if (parseNumber()) {
-					if (parseMult() || parseDiv()) {
-					}
-					if (parsePlus() || parseMinus()) {
-					}
-					if (parseEqual() || parseLess() || parseMore()) {
-					}
-					return true;
-				} else if (parseObject()) {
-					return true;
-				} else if (parseVar()) {
-					while (parseApply() || parseIndex() || parseDot()) {
-					}
-					if (parseSize()) {
-					}
-					if (parseMult() || parseDiv()) {
-					}
-					if (parsePlus() || parseMinus()) {
-					}
-					if (parseEqual() || parseLess() || parseMore()) {
-					}
-					return true;
-				} else {
-					return false;
+			if (parseSubexp()) {
+				if (parseSize()) {
 				}
+				if (parseMult() || parseDiv()) {
+				}
+				if (parsePlus() || parseMinus()) {
+				}
+				if (parseRelation()) {
+				}
+				return true;
+			} else if (parseString()) {
+				return true;
+			} else if (parseNumber()) {
+				if (parseMult() || parseDiv()) {
+				}
+				if (parsePlus() || parseMinus()) {
+				}
+				if (parseRelation()) {
+				}
+				return true;
+			} else if (parseObject()) {
+				return true;
+			} else if (parseVar()) {
+				while (parseApply() || parseIndex() || parseDot()) {
+				}
+				if (parseSize()) {
+				}
+				if (parseMult() || parseDiv()) {
+				}
+				if (parsePlus() || parseMinus()) {
+				}
+				if (parseRelation()) {
+				}
+				return true;
+			} else {
+				return false;
 			}
 		}
 
@@ -1122,11 +1153,11 @@ function loadBonzaLibrary(url) {
 				token = scanner.exec(formula);
 				if (parseFormula()) {
 					if (token === null || token[0] !== ")") {
-						throw "Fail";
+						throw "Right parenthesis missing";
 					}
 					token = scanner.exec(formula);
 				} else {
-					throw "Fail";
+					throw "Parse error";
 				}
 				level--;
 				return true;
@@ -1137,49 +1168,80 @@ function loadBonzaLibrary(url) {
 
 		function parseObject() {
 			if (token !== null && token[0] === "{") {
-				var obj = { };
+				var obj = {
+					all : []
+				};
 				var prop;
+
 				level++;
 				token = scanner.exec(formula);
 				if (parseProp()) {
 					if (token === null || token[0] !== ":") {
-						throw "Fail";
+						throw "Colon is missing";
 					}
 					prop = result;
 					token = scanner.exec(formula);
 					if (token !== null && (token[0] === "," || token[0] === "}")) {
-						obj[prop] = null;
+						obj.all.push({
+							prop : {
+								name : prop,
+								type : {
+									none : null
+								}
+							}
+						});
 					} else if (parseFormula()) {
-						obj[prop] = result;
+						obj.all.push({
+							prop : {
+								name : prop,
+								type : result
+							}
+						});
 					} else {
-						throw "Fail";
+						throw "Invalid property";
 					}
 					while (token !== null && token[0] === ",") {
 						token = scanner.exec(formula);
 						if (parseProp()) {
 							if (token === null || token[0] !== ":") {
-								throw "Fail";
+								throw "Colon is missing";
 							}
 							prop = result;
 							token = scanner.exec(formula);
 							if (token !== null && (token[0] === "," || token[0] === "}")) {
-								obj[prop] = null;
+								obj.all.push({
+									prop : {
+										name : prop,
+										type : {
+											none : null
+										}
+									}
+								});
 							} else if (parseFormula()) {
-								obj[prop] = result;
+								obj.all.push({
+									prop : {
+										name : prop,
+										type : result
+									}
+								});
 							} else {
-								throw "Fail";
+								throw "Invalid property";
 							}
 						} else {
-							throw "Fail";
+							throw "Invalid property";
 						}
 					}
 				}
 				if (token === null || token[0] !== "}") {
-					throw "Fail";
+					throw "No closing bracket";
 				}
 				token = scanner.exec(formula);
 				level--;
-				result = obj;
+				if (obj.all.length == 0) {
+					result = obj.all[0];
+				} else {
+					result = obj;
+				}
 				return true;
 			} else {
 				return false;
@@ -1188,41 +1250,30 @@ function loadBonzaLibrary(url) {
 
 		function parseApply() {
 			var prev;
-			var args = [];
+			var arg;
+
 			if (token !== null && token[0] === "(") {
 				level++;
 				prev = result;
 				token = scanner.exec(formula);
 				if (token !== null && token[0] !== ")") {
 					if (parseFormula()) {
-						args[args.length] = result;
-						//token = scanner.exec(formula);
-						while (token !== null && token[0] === ",") {
-							token = scanner.exec(formula);
-							if (parseFormula()) {
-								args[args.length] = result;
-								//token = scanner.exec(formula);
-							} else {
-								throw "Fail";
-							}
-						}
+						arg = result;
 					} else {
-						throw "Fail";
+						throw "Invalid argument";
 					}
-				}
-				if (args.length == 0) {
-					result = prev();
-				} else if (args.length == 1) {
-					result = prev(args[0]);
-				} else if (args.length == 2) {
-					result = prev(args[0], args[1]);
-				} else if (args.length == 3) {
-					result = prev(args[0], args[1], args[2]);
 				} else {
-					throw "Fail";
+					throw "Argument is missing";
 				}
+				if (!prev.hasOwnProperty("func")) {
+					throw typeStr(prev) + " is not a function";
+				}
+				if (!covariant(arg, prev.arg)) {
+					throw typeStr(arg) + " is not compatible with " + typeStr(prev.arg);
+				}
+				result = prev.ret;
 				if (token === null || token[0] !== ")") {
-					throw "Fail";
+					throw "No closing parenthesis";
 				}
 				token = scanner.exec(formula);
 				level--;
@@ -1234,10 +1285,15 @@ function loadBonzaLibrary(url) {
 
 		function parseSize() {
 			var prev;
-			var args = [];
+
 			if (token !== null && token[0] === "#") {
 				prev = result;
-				result = prev.length;
+				if (!prev.hasOwnProperty("array")) {
+					throw typeStr(prev) + " is not an array";
+				}
+				result = {
+					integer : null
+				};
 				token = scanner.exec(formula);
 				return true;
 			} else {
@@ -1247,18 +1303,24 @@ function loadBonzaLibrary(url) {
 
 		function parseIndex() {
 			var prev;
-			var args = [];
+
 			if (token !== null && token[0] === "[") {
 				level++;
 				prev = result;
+				if (!prev.hasOwnProperty("array")) {
+					throw typeStr(prev) + " is not an array";
+				}
 				token = scanner.exec(formula);
 				if (parseFormula()) {
-					result = prev[result];
+					if (!prev.hasOwnProperty("integer")) {
+						throw "Index is not an integer";
+					}
+					result = prev.array;
 				} else {
-					throw "Fail";
+					throw "Invalid index";
 				}
 				if (token === null || token[0] !== "]") {
-					throw "Fail";
+					throw "No closing bracket";
 				}
 				token = scanner.exec(formula);
 				level--;
@@ -1270,17 +1332,24 @@ function loadBonzaLibrary(url) {
 
 		function parseDot() {
 			var prev;
+			var prop;
+
 			if (token !== null && token[0] === ".") {
 				prev = result;
+				if (!isObjType(prev)) {
+					throw typeStr(prev) + " is not an object type";
+				}
 				token = scanner.exec(formula);
 				if (parseProp()) {
-					if (prev.hasOwnProperty(result)) {
-						result = prev[result];
+					if (findProp(prev, result, prop)) {
+						result = {
+							prop : prop.prop
+						};
 					} else {
-						throw "Fail";
+						throw "Type " + typeStr(prev) + " does not contain property " + result;
 					}
 				} else {
-					throw "Fail";
+					throw "Property name is invalid or missing";
 				}
 				return true;
 			} else {
@@ -1290,13 +1359,32 @@ function loadBonzaLibrary(url) {
 
 		function parsePlus() {
 			var prev;
+
 			if (token !== null && token[0] === "+") {
 				prev = result;
 				token = scanner.exec(formula);
 				if (parseFormula()) {
-					result += prev;
+					if (prev.hasOwnProperty("integer") && result.hasOwnProperty("integer")) {
+						result = {
+							integer : null
+						};
+					} else if ((prev.hasOwnProperty("integer") || prev.hasOwnProperty("number")) && (result.hasOwnProperty("integer") || result.hasOwnProperty("number"))) {
+						result = {
+							number : null
+						};
+					} else if (prev.hasOwnProperty("interval") && result.hasOwnProperty("interval")) {
+						result = {
+							interval : null
+						};
+					} else if ((prev.hasOwnProperty("time") && result.hasOwnProperty("interval")) || (prev.hasOwnProperty("interval") && result.hasOwnProperty("time"))) {
+						result = {
+							time : null
+						};
+					} else {
+						throw "Cannot add " + typeStr(prev) + " and " + typeStr(result);
+					}
 				} else {
-					throw "Fail";
+					throw "Parse error";
 				}
 				return true;
 			} else {
@@ -1306,13 +1394,32 @@ function loadBonzaLibrary(url) {
 
 		function parseMinus() {
 			var prev;
+
 			if (token !== null && token[0] === "-") {
 				prev = result;
 				token = scanner.exec(formula);
 				if (parseFormula()) {
-					result = prev - result;
+					if (prev.hasOwnProperty("integer") && result.hasOwnProperty("integer")) {
+						result = {
+							integer : null
+						};
+					} else if ((prev.hasOwnProperty("integer") || prev.hasOwnProperty("number")) && (result.hasOwnProperty("integer") || result.hasOwnProperty("number"))) {
+						result = {
+							number : null
+						};
+					} else if (prev.hasOwnProperty("interval") && result.hasOwnProperty("interval")) {
+						result = {
+							interval : null
+						};
+					} else if (prev.hasOwnProperty("time") && result.hasOwnProperty("interval")) {
+						result = {
+							time : null
+						};
+					} else {
+						throw "Cannot subtract " + typeStr(result) + " from " + typeStr(prev);
+					}
 				} else {
-					throw "Fail";
+					throw "Parse error";
 				}
 				return true;
 			} else {
@@ -1322,13 +1429,28 @@ function loadBonzaLibrary(url) {
 
 		function parseMult() {
 			var prev;
+
 			if (token !== null && token[0] === "*") {
 				prev = result;
 				token = scanner.exec(formula);
 				if (parseFormula()) {
-					result *= prev;
+					if (prev.hasOwnProperty("integer") && result.hasOwnProperty("integer")) {
+						result = {
+							integer : null
+						};
+					} else if ((prev.hasOwnProperty("integer") || prev.hasOwnProperty("number")) && (result.hasOwnProperty("integer") || result.hasOwnProperty("number"))) {
+						result = {
+							number : null
+						};
+					} else if ((prev.hasOwnProperty("interval") && (result.hasOwnProperty("integer") || result.hasOwnProperty("number"))) || (result.hasOwnProperty("interval") && (prev.hasOwnProperty("integer") || prev.hasOwnProperty("number")))) {
+						result = {
+							interval : null
+						};
+					} else {
+						throw "Cannot multiply " + typeStr(prev) + " by " + typeStr(result);
+					}
 				} else {
-					throw "Fail";
+					throw "Parse error";
 				}
 				return true;
 			} else {
@@ -1338,13 +1460,24 @@ function loadBonzaLibrary(url) {
 
 		function parseDiv() {
 			var prev;
+
 			if (token !== null && token[0] === "/") {
 				prev = result;
 				token = scanner.exec(formula);
 				if (parseFormula()) {
-					result = prev / result;
+					if ((prev.hasOwnProperty("integer") || prev.hasOwnProperty("number")) && (result.hasOwnProperty("integer") || result.hasOwnProperty("number"))) {
+						result = {
+							number : null
+						};
+					} else if (prev.hasOwnProperty("interval") && (result.hasOwnProperty("integer") || result.hasOwnProperty("number"))) {
+						result = {
+							interval : null
+						};
+					} else {
+						throw "Cannot divide " + typeStr(prev) + " by " + typeStr(result);
+					}
 				} else {
-					throw "Fail";
+					throw "Parse error";
 				}
 				return true;
 			} else {
@@ -1352,47 +1485,25 @@ function loadBonzaLibrary(url) {
 			}
 		}
 
-		function parseLess() {
+		function parseRelation() {
 			var prev;
-			if (token !== null && token[0] === "<") {
-				prev = result;
-				token = scanner.exec(formula);
-				if (parseFormula()) {
-					result = prev < result;
-				} else {
-					throw "Fail";
-				}
-				return true;
-			} else {
-				return false;
-			}
-		}
 
-		function parseMore() {
-			var prev;
-			if (token !== null && token[0] === ">") {
-				prev = result;
-				token = scanner.exec(formula);
-				if (parseFormula()) {
-					result = prev > result;
-				} else {
-					throw "Fail";
-				}
-				return true;
-			} else {
-				return false;
+			function both(name) {
+				return prev.hasOwnProperty(name) && result.hasOwnProperty(name);
 			}
-		}
 
-		function parseEqual() {
-			var prev;
-			if (token !== null && token[0] === "=") {
+			if (token !== null && (token[0] === token[6] || token[0] === "=")) {
 				prev = result;
 				token = scanner.exec(formula);
 				if (parseFormula()) {
-					result = prev === result;
+					if (!((prev.hasOwnProperty("integer") || prev.hasOwnProperty("number")) && (result.hasOwnProperty("integer") || result.hasOwnProperty("number")) || both("time") || both("interval") || both("string") )) {
+						throw "Cannot compare " + typeStr(prev) + " and " + typeStr(result);
+					}
+					result = {
+						none : null
+					};
 				} else {
-					throw "Fail";
+					throw "Parse error";
 				}
 				return true;
 			} else {
@@ -1412,7 +1523,12 @@ function loadBonzaLibrary(url) {
 
 		function parseVar() {
 			if (token !== null && token[0] === token[3]) {
-				result = context[token[0]];
+				for (var i = 0; i < context.vars.length; i++) {
+					if (context.vars[i].name == token[0]) {
+						result = context.vars[i].type;
+					}
+				}
+				throw "Variable " + token[0] + " not found";
 				token = scanner.exec(formula);
 				return true;
 			} else {
@@ -1422,7 +1538,15 @@ function loadBonzaLibrary(url) {
 
 		function parseNumber() {
 			if (token !== null && (token[0] === token[1] || token[0] === token[2])) {
-				result = Number(token[0]);
+				if (token[0] === token[1]) {
+					result = {
+						number : null
+					};
+				} else {
+					result = {
+						integer : null
+					};
+				}
 				token = scanner.exec(formula);
 				return true;
 			} else {
@@ -1432,7 +1556,9 @@ function loadBonzaLibrary(url) {
 
 		function parseString() {
 			if (token !== null && (token[0] === token[4] || token[0] === token[5])) {
-				result = token[0].substr(1, token[0].length - 2);
+				result = {
+					string : null
+				};
 				token = scanner.exec(formula);
 				return true;
 			} else {
@@ -1460,96 +1586,160 @@ function loadBonzaLibrary(url) {
 		var stmt;
 		var where;
 		var i;
-		var result = { };
+		var result = {
+			code : expr,
+			type : {
+				none : null
+			},
+			errors : []
+		};
 		var context2 = { };
-		var output2 = { };
 		var prop;
-		var array = [];
-		var array2 = [];
-		var parser;
-		var xmlDoc;
 		var temp;
-		var action;
-		var item;
 		var idxname;
 		var arg;
 		var argname;
 		var ret;
 		var frmpat = /\[%(.*?)%\]/g;
-
-		var frmval = function(match, p1) {
-			if (analyzeFormula(p1, context)) {
-				return output.result;
-			}
-		};
+		var type;
+		var formula;
 
 		try {
 			if (expr.nodeType == 3) {
-				return analyzeFormula(expr.nodeValue.trim(), context);
+				type = analyzeFormula(expr.nodeValue.trim(), context);
+				if (type.errors.length > 0) {
+					result.errors.push("Invalid data type");
+				}
+				result.type = type;
+				return result;
 			}
 			switch(expr.nodeName) {
 			case "invalid":
-				output.result = undefined;
-				return false;
+				type = analyzeType(expr.children[0], context);
+				if (type.errors.length > 0) {
+					result.errors.push("Invalid data type");
+				}
+				result.type = type;
+				break;
 			case "text":
 				temp = expr.innerHTML;
-				output.result = temp.replace(frmpat, frmval);
+				formula = frmpat.exec(temp);
+				while (formula !== null) {
+					type = analyzeFormula(formula[0], context);
+					if (type.errors.length > 0) {
+						result.errors.push(type.errors[0]);
+					}
+					if (type.hasOwnProperty("string") || type.hasOwnProperty("integer") || type.hasOwnProperty("number")) {
+						result.errors.push("Formula of type " + typeStr(type) + " cannot be inserted in text");
+					}
+					formula = frmpat.exec(temp);
+				}
+				result.type = {
+					string : null
+				};
 				break;
 			case "eval":
-				if (evalExpr(firstExpr(expr), context, result)) {
-					if (window.DOMParser) {
-						parser = new DOMParser();
-						xmlDoc = parser.parseFromString(result.result, "text/xml");
-					} else {
-						xmlDoc = new ActiveXObject("Microsoft.XMLDOM");
-						xmlDoc.async = false;
-						xmlDoc.loadXML(result.result);
-					}
-					return evalExpr(xmlDoc.children[0], context, output);
+				temp = getChildren(temp);
+				if (temp.length > 1) {
+					result.errors.push("More than one expression specified");
+				} else if (temp.length == 0) {
+					result.errors.push("Expression not specified");
 				} else {
-					output.result = undefined;
-					return false;
 				}
+				temp = analyzeExpr(temp[0], context);
+				type = temp.type;
+				if (type.errors.length > 0) {
+					result.errors.push("Invalid data type");
+				}
+				if (!type.hasOwnProperty("string")) {
+					result.errors.push("Expression type is " + typeStr(type) + "; must be string");
+				}
+				result.type = {
+					dynamic : null
+				};
 				break;
 			case "list":
 				temp = getChildren(expr);
-				array.length = temp.length;
-				for ( i = 0; i < array.length; i++) {
-					if (evalExpr(temp[i], context, result)) {
-						array[i] = result.result;
-					} else {
-						output.result = undefined;
-						return false;
-					}
-				}
-				output.result = array;
-				break;
-			case "array":
-				temp = firstExpr(findChild(expr, "size"));
-				if (evalExpr(temp, context, result)) {
-					array.length = result.result;
-					item = findChild(expr, "item");
-					idxname = item.getAttribute("index");
-					for (prop in context) {
-						context2[prop] = context[prop];
-					}
-					for ( i = 0; i < array.length; i++) {
-						context2[idxname] = i;
-						if (evalExpr(firstExpr(item), context2, result)) {
-							array[i] = result.result;
-						} else {
-							output.result = undefined;
-							return false;
+				if (temp.length > 0) {
+					type = analyzeType(temp[0], context);
+					result.type = {
+						array : type
+					};
+					for ( i = 1; i < temp.length; i++) {
+						type = analyzeType(temp[0], context);
+						if (!covariant(type, result.type)) {
+							result.errors.push("Element type is " + typeStr(type) + "; must be " + typeStr(result.type));
 						}
 					}
 				} else {
-					output.result = undefined;
-					return false;
+					result.errors.push("List must not be empty");
 				}
-				output.result = array;
+				break;
+			case "array":
+				temp = findChildren(expr, "size");
+				if (temp.length > 1) {
+					result.errors.push("More than one array size specified");
+				} else if (temp.length == 0) {
+					result.errors.push("Array size not specified");
+				} else {
+					temp = getChildren(temp);
+					if (temp.length > 1) {
+						result.errors.push("More than one array size specified");
+					} else if (temp.length == 0) {
+						result.errors.push("Array size not specified");
+					} else {
+						temp = analyzeExpr(temp, context);
+						if (!covariant(temp.type, {
+							integer : null
+						})) {
+							result.errors.push("Array size must be integer");
+						}
+					}
+				}
+				temp = findChildren(expr, "item");
+				if (temp.length > 1) {
+					result.errors.push("More than one item expression specified");
+				} else if (temp.length == 0) {
+					result.errors.push("Item expression not specified");
+				} else {
+					idxname = temp.getAttribute("index");
+					if (idxname === null || idxname === "") {
+						result.errors.push("Index attribute not specified");
+					}
+					for (prop in context) {
+						context2[prop] = context[prop];
+					}
+					context2.vars.push({
+						name : idxname,
+						type : {
+							integer : null
+						}
+					});
+					temp = getChildren(temp);
+					if (temp.length > 1) {
+						result.errors.push("More than one item expression specified");
+					} else if (temp.length == 0) {
+						result.errors.push("Item expression not specified");
+					} else {
+						temp = analyzeExpr(temp[0], context2);
+						result.type = {
+							array : temp.type
+						};
+					}
+				}
 				break;
 			case "no":
-				output.result = [];
+				temp = getChildren(expr);
+				if (temp.length > 1) {
+					result.errors.push("More than one item type specified");
+				} else if (temp.length == 0) {
+					result.errors.push("Item type not specified");
+				} else {
+					type = analyzeType(temp[0], context);
+					result.type = {
+						array : type
+					};
+				}
 				break;
 			case "calc":
 				where = getChildren(expr);
@@ -1695,10 +1885,10 @@ function loadBonzaLibrary(url) {
 			default:
 				return false;
 			}
-			return true;
 		} catch(error) {
-			return false;
+			result.errors.push(error);
 		}
+		return result;
 	};
 
 	function analyzeStmt(stmt, context) {
@@ -1833,8 +2023,8 @@ function loadBonzaLibrary(url) {
 				}
 			}
 			break;
-		case "unwrap":
-			break;
+		//case "unwrap":
+		//break;
 		default:
 			result.errors.push("Unknown statement: " + stmt.nodeName);
 			result.other = null;
@@ -1846,6 +2036,31 @@ function loadBonzaLibrary(url) {
 
 	function isObjType(type) {
 		return type.hasOwnProperty("prop") || type.hasOwnProperty("all") || type.hasOwnProperty("any");
+	}
+
+	function findProp(type, prop, result) {
+		var i;
+
+		if (type.hasOwnProperty("prop")) {
+			result.prop = type.prop;
+			return true;
+		} else if (type.hasOwnProperty("all")) {
+			for ( i = 0; i < type.all.length; i++) {
+				if (findProp(type.all[i], prop, result)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (type.hasOwnProperty("any")) {
+			for ( i = 0; i < type.any.length; i++) {
+				if (findProp(type.any[i], prop, result)) {
+					return true;
+				}
+			}
+			return false;
+		} else {
+			throw typeStr(type) + " is not an object type";
+		}
 	}
 
 	function combine(type1, type2) {
@@ -2158,6 +2373,10 @@ function loadBonzaLibrary(url) {
 		}
 	}
 
+	function covNum(type1, type2) {
+		return (type1.hasOwnProperty("integer") && type2.hasOwnProperty("integer")) || (type1.hasOwnProperty("integer") && type2.hasOwnProperty("number")) || (type1.hasOwnProperty("number") && type2.hasOwnProperty("number"));
+	}
+
 	function covObj(type1, type2) {
 		var i;
 
@@ -2198,7 +2417,7 @@ function loadBonzaLibrary(url) {
 			return type1.hasOwnProperty(name) && type2.hasOwnProperty(name);
 		}
 
-		return both("none") || both("integer") || both("number") || both("string") || both("time") || both("interval") || (both("array") && covariant(type1.array, type2.array)) || covObj(type1, type2) || covFunc(type1, type2);
+		return both("none") || covNum(type1, type2) || both("string") || both("time") || both("interval") || (both("array") && covariant(type1.array, type2.array)) || covObj(type1, type2) || covFunc(type1, type2);
 	}
 
 	function analyzeLib(code) {

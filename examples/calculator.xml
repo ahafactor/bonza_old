@@ -151,7 +151,7 @@
 													<def var="newvalue">input.char</def>
 												</all>
 												<all>
-													<is>length(state.value) &lt; maxlen</is>
+													<is>length(state.value) `lt` maxlen</is>
 													<def var="newvalue">
 														<text>[%state.value%][%input.char%]</text>
 													</def>
@@ -230,7 +230,7 @@
 													<def var="str">numToStr(result)</def>
 													<any>
 														<all>
-															<is>length(str) > maxlen</is>
+															<is>length(str) `gt` maxlen</is>
 															<def var="displayResult">formatNum({num: result, exp: 3})</def>
 														</all>
 														<def var="displayResult">numToStr(result)</def>

@@ -1,1 +1,42 @@
-<text like="Hello, World!"/>
+<library>
+	<applet name="test">
+		<output>
+			<string/>
+		</output>
+		<state name="state">
+			<all>
+				<prop name="id">
+					<string/>
+				</prop>
+				<prop name="text">
+					<string/>
+				</prop>
+			</all>
+		</state>
+		<content>
+			<text>
+				Hello, World!
+			</text>
+		</content>
+		<init id="id" content="text">
+			<state>{id: id, text: text}</state>
+			<actions>
+				<no>
+					<action/>
+				</no>
+			</actions>
+		</init>
+		<respond>
+			<input name="input">
+				<any>
+					<prop name="test"/>
+				</any>
+			</input>
+			<state>state
+			</state>
+		</respond>
+		<events>
+			<click>{test:}</click>
+		</events>
+	</applet>
+</library>
